@@ -3,7 +3,7 @@ import pandas_ta as pta
 import yfinance as yf
 
 class StockData:
-    def __init__(self, name, start_date, period, interval, stock, momentum):
+    def __init__(self, name, start_date, period, end_date, stock, momentum):
         """
         This function initializes the stock data object
         :param name: the stock name
@@ -13,7 +13,7 @@ class StockData:
         :param stock: the stock object
         :param momentum: the momentum of the acceleration
         """
-        self.stock_data = yf.download(name, start=start_date, period=period, interval=interval)[29:329]
+        self.stock_data = yf.download(name, start=start_date, period=period, end=end_date)[29:329]
         self.stock_data["RSI"] = pta.rsi(self.stock_data["Close"], length=14)
         self.stock_data["ADX"] = pta.adx(self.stock_data["High"], self.stock_data["Low"], self.stock_data["Close"], length=7)["ADX_7"]
         self.stock_data["MACD"] = pta.macd(self.stock_data["Close"], fast=4, slow=12, signal=3)["MACDs_4_12_3"]

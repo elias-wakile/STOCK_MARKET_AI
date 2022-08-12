@@ -15,8 +15,6 @@ class NeuralNetwork:
         self.signal_rate = signal_rate
         self.epsilon_final = epsilon_final
 
-        # Stock Market Relevant
-
         # Reward preparation
         self.state_size = state_size
         self.action_space = action_space
