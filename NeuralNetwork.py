@@ -32,7 +32,7 @@ class NeuralNetwork:
         model.add(tf.keras.layers.Dense(units=24, activation='relu'))
         model.add(tf.keras.layers.Dense(units=48, activation='relu'))
         model.add(tf.keras.layers.Dense(units=self.action_space, activation='linear'))
-        model.compile(loss=self.loss, optimizer=tf.keras.optimizers.Adam(learning_rate=0.001))
+        model.compile(loss="mse", optimizer=tf.keras.optimizers.Adam(learning_rate=0.001))
         return model
 
     def act(self, state):
