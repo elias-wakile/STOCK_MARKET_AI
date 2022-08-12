@@ -1,7 +1,9 @@
 from collections import deque
-import tensorflow as tf
 import random
 import numpy as np
+from Stock import Stock
+import tensorflow as tf
+
 class NeuralNetwork:
     def __init__(self,  episodes, signal_rate, stock_list, state_size, action_space, model_name="AITraderBest",
                  gamma = 0.95, epsilon = 1.0, epsilon_final = 0.01, epsilon_decay = 0.995, ):

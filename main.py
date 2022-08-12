@@ -159,25 +159,26 @@ class Agent:
             if (i+1) % checkpoint == 0:
                 print('epoch: %d, total rewards: %f.3, cost: %f, total money: %f'%(i + 1, total_profit, cost,
                                                                                   starting_money))
-close = df.Close.values.tolist()
-initial_money = 10000
-window_size = 30
-skip = 1
-batch_size = 32
-agent = Agent(state_size = window_size,
-              window_size = window_size,
-              trend = close,
-              skip = skip,
-              batch_size = batch_size)
-agent.train(iterations = 100, checkpoint = 20, initial_money = initial_money)
-states_buy, states_sell, total_gains, invest = agent.buy(initial_money = initial_money)
-fig = plt.figure(figsize = (15,5))
-plt.plot(close, color='r', lw=2.)
-plt.plot(close, '^', markersize=10, color='m', label = 'buying signal', markevery = states_buy)
-plt.plot(close, 'v', markersize=10, color='k', label = 'selling signal', markevery = states_sell)
-plt.title('total gains %f, total investment %f%%'%(total_gains, invest))
-plt.legend()
-plt.savefig(name+'.png')
-plt.show()
+if __name__ == '__main__':
+    close = df.Close.values.tolist()
+    initial_money = 10000
+    window_size = 30
+    skip = 1
+    batch_size = 32
+    agent = Agent(state_size = window_size,
+                  window_size = window_size,
+                  trend = close,
+                  skip = skip,
+                  batch_size = batch_size)
+    agent.train(iterations = 100, checkpoint = 20, initial_money = initial_money)
+    states_buy, states_sell, total_gains, invest = agent.buy(initial_money = initial_money)
+    fig = plt.figure(figsize = (15,5))
+    plt.plot(close, color='r', lw=2.)
+    plt.plot(close, '^', markersize=10, color='m', label = 'buying signal', markevery = states_buy)
+    plt.plot(close, 'v', markersize=10, color='k', label = 'selling signal', markevery = states_sell)
+    plt.title('total gains %f, total investment %f%%'%(total_gains, invest))
+    plt.legend()
+    plt.savefig(name+'.png')
+    plt.show()
 
 # # See PyCharm help at https://www.jetbrains.com/help/pycharm/
