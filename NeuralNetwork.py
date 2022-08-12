@@ -24,6 +24,9 @@ class NeuralNetwork:
         self.first_iter = True
         self.model = self.model_builder()
 
+        #PortFolio
+        self.PortFolio = PortFolio(10000, ["AAPL"], "1m", [f"2022-01-0{i}" for i in range(1,10)])
+
     def model_builder(self):
         model = tf.keras.models.Sequential()
         model.add(tf.keras.layers.Dense(units=10, activation='relu', input_dim=self.state_size))
