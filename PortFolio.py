@@ -1,5 +1,5 @@
 from Stock import Stock
-from StockMarket import StockData
+from StockData import StockData
 import pandas_datareader.data as pdr
 import numpy as np
 
@@ -47,6 +47,7 @@ class PortFolio:
         for stock_name in self.stock_name_list:
             if self.stock_market[stock_name].update_stock() == 1:
                 self.next_day()
+                self.stock_market[stock_name].update_stock()
 
     def getBalance(self):
         """
