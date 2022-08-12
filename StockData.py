@@ -63,8 +63,3 @@ class StockData:
         self.stock.update(volume, low_price, high_price, open_price,
                           close_price, self.time_stamp, rsi, adx, cci, macd,
                           self.momentum, new_day=True, momentum=10e-1)
-
-if __name__ == '__main__':
-    stock_data = yf.download("AAPL", start="2022-01-01", end="2022-01-02",
-                                  interval="1m")[29:329]
-    print(stock_data.size)
