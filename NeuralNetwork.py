@@ -1,6 +1,7 @@
 from collections import deque
 import random
 import numpy as np
+from PortFolio import PortFolio
 from Stock import Stock
 import tensorflow as tf
 

@@ -110,7 +110,7 @@ class PortFolio:
                 num_of_stocks = self.stocks[stock_name].num_of_stocks
             elif num_of_stocks * self.stocks[stock_name].last_low_price >= self.balance:
                 num_of_stocks = int(self.balance / (self.stocks[stock_name].last_low_price))
-            curr_loss = stock.trade()
+            curr_loss = self.stocks[stock_name].trade(stock_predictions[stock_name])
             if num_of_stocks < 0:
                 self.balance += num_of_stocks * self.stocks[stock_name].last_high_price
             elif num_of_stocks > 0:

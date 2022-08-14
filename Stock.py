@@ -1,9 +1,11 @@
 MOMENTUM = 0.1
 
+
 class Stock:
     """
     This class represents a stock
     """
+
     def __init__(self, name):
         """
         This is a new stock constructor
@@ -30,7 +32,6 @@ class Stock:
         self.num_of_stocks_owned = 0
         self.money_in_stock = float(0)
         self.price_per_stock = float(0)
-
 
     def update(self, volume, low_price, high_price, open_price,
                close_price, curr_time, RSI, ADX, CCI, MACD, momentum,
@@ -94,7 +95,7 @@ class Stock:
         self.CCI = CCI
         self.RSI = RSI
 
-    def buy(self, amount_of_stocks : int):
+    def buy(self, amount_of_stocks: int):
         """
         This function process a buying of stocks
         :param amount_of_stocks: The amount of stocks to be bought
@@ -103,10 +104,10 @@ class Stock:
         self.num_of_stocks_owned += amount_of_stocks
         self.money_in_stock -= amount_of_stocks * self.last_low_price
         self.price_per_stock = min(self.daily_lowest,
-                                self.money_in_stock / self.num_of_stocks_owned)
+                                   self.money_in_stock / self.num_of_stocks_owned)
         print(f"Bought {amount_of_stocks} stocks of {self.stock_name}"
               f" for a price of {self.last_low_price}$ per stock.")
-        return ( 1 - (self.daily_lowest / self.last_low_price) ) * amount_of_stocks * self.last_low_price
+        return (1 - (self.daily_lowest / self.last_low_price)) * amount_of_stocks * self.last_low_price
 
     def sell(self, amount_of_stocks):
         """
@@ -120,7 +121,7 @@ class Stock:
         self.money_in_stock += amount_of_stocks * self.last_high_price
         print(f"Sold {amount_of_stocks} stocks of {self.stock_name}"
               f" for a price of {self.last_high_price}$ per stock.")
-        return ( 1 - (self.last_high_price / self.daily_highest)) * amount_of_stocks * self.last_high_price
+        return (1 - (self.last_high_price / self.daily_highest)) * amount_of_stocks * self.last_high_price
 
     def keep(self):
         """
