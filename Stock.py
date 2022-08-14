@@ -33,6 +33,25 @@ class Stock:
         self.money_in_stock = float(0)
         self.price_per_stock = float(0)
 
+        # Acceleration
+        self.market_volume_acceleration = float(1)
+        self.daily_precentile_acceleration = float(1)
+        self.stock_price_acceleration = float(1)
+        self.market_volume_acceleration = float(1)
+
+        # todo: add name to this part
+        self.current_price_daily_percentile = float(1)
+        self.last_high_price = float(1)
+        self.last_low_price = float(1)
+        self.last_open_price = float(1)
+        self.last_close_price = float(1)
+
+        # Special formula parameters todo: I add this part
+        self.ADX = float(1)
+        self.MACD = float(1)
+        self.CCI = float(1)
+        self.RSI = float(1)
+
     def update(self, volume, low_price, high_price, open_price,
                close_price, curr_time, RSI, ADX, CCI, MACD, momentum,
                new_day=False, newday_momentum=1e-3):

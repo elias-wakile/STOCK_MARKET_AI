@@ -14,7 +14,7 @@ class StockData:
         :param stock: the stock object
         :param momentum: the momentum of the acceleration
         """
-        self.stock_data = yf.download(name, start=start_date, period=period, end=end_date) # why we need slicing of this numbers?[29:329]
+        self.stock_data = yf.download(name, start=start_date, period=period, end=end_date) # todo: why we need slicing of this numbers?[29:329]
         self.stock_data["RSI"] = pta.rsi(self.stock_data["Close"], length=14)
         self.stock_data["ADX"] = \
             pta.adx(self.stock_data["High"], self.stock_data["Low"], self.stock_data["Close"], length=7)["ADX_7"]

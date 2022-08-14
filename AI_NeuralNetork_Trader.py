@@ -6,6 +6,8 @@ import pandas_datareader as data_reader
 import talib
 from ta.trend import ADXIndicator
 from sklearn.model_selection import train_test_split
+
+from PortFolio import PortFolio
 from Stock import Stock
 from StockData import StockData
 import keras.backend as K
@@ -151,28 +153,13 @@ def run_trader(trader, data, batch_size):
 
 
 if __name__ == "__main__":
-    # GPUtil.showUtilization()
-    # print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
-    # print(tf.test.gpu_device_name())
     stock_name = "AAPL"
-    stock_o = Stock(stock_name)
-    stock_data = StockData(stock_name, "2020-06-02", "max", "2022-06-02", stock_o)
+    # stock_o = Stock(stock_name)
+    # stock_data = StockData(stock_name, "2020-06-02", "max", "2022-06-02", stock_o)
+    porfolio = PortFolio(1000, [stock_name], "max", [f"2022-01-0{i}" for i in range(1, 10)], {stock_name: 0}) # todo: to understend what is the part of period in PortFolio
+    porfolio.update_portfolio()
+    b = porfolio.getState()
+
     a = 7
-    # data = dataset_loader(stock_name)
-    # window_size = 5  # 4
-    # episodes = 5
-    # train, test = train_test_split(data, test_size=0.5, shuffle=False)
-    # budget = 1000
-    # batch_size = 16 # 64
-    # data_samples = train.shape[0] - 1
-    # trader = AI_Trader(window_size)
-    # for episode in range(1, episodes + 1):
-    #     shares = 0
-    #     print("Episode: {}/{}".format(episode, episodes))
-    #     # state = state_creator(data, 0, window_size + 1)
-    #     run_trader(trader, train, batch_size)
-    #
-    #     if episode % 5 == 0:
-    #         trader.model.save("ai_trader_{}.h5".format(episode))
-    # run_trader(trader, test, batch_size)
+
 

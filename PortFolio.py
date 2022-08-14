@@ -3,6 +3,7 @@ from StockData import StockData
 import pandas_datareader.data as pdr
 import numpy as np
 
+
 class PortFolio:
     def __init__(self, initial_investment, stock_list, period, date_list, stock_indices):
         """
@@ -20,11 +21,10 @@ class PortFolio:
         self.balance = initial_investment
         self.period = period
         for stock_name in stock_list:
-             self.stocks[stock_name] = Stock(stock_name)
+            self.stocks[stock_name] = Stock(stock_name)
         self.date_list = date_list
         self.stock_indices = stock_indices
-        self.features_num = 18
-
+        self.features_num = 20  # todo: was 18 but in getState there is 20 features
 
     def next_day(self):
         """
@@ -35,10 +35,10 @@ class PortFolio:
             curr_date = self.date_list[0]
             next_date = self.date_list[1]
             self.date_list = self.date_list[1:]
-            self.stock_market = {stock_name : StockData(stock_name, curr_date,
-                                                        self.period, next_date,
-                                                        self.stocks[stock_name], 10e-1)
-                                 for stock_name in self.stock_name_list}
+            self.stock_market = {stock_name: StockData(stock_name, curr_date,
+                                                       self.period, next_date,
+                                                       self.stocks[stock_name], 10e-1)
+                                 for stock_name in self.stock_name_list} # todo: what this need to be ?
 
     def update_portfolio(self):
         """
@@ -69,7 +69,7 @@ class PortFolio:
         :return: The state of the Portfolio, each line represents a stock and
         the columns represent the different values of the parameters
         """
-        state = np.array([len(self.stock_name_list), self.features_num])
+        state = np.zeros((len(self.stock_name_list), self.features_num))
         for stock_name in self.stock_indices.keys():
             line_index = self.stock_indices[stock_name]
             state[line_index, 0] = self.stocks[stock_name].daily_highest
@@ -106,7 +106,7 @@ class PortFolio:
         for stock_name in self.stock_indices.keys():
             index = self.stock_indices[stock_name]
             num_of_stocks = stock_predictions[index]
-            if num_of_stocks < -self.stocks[stock_name].num_of_stocks:
+            if num_of_stocks < -self.stocks[stock_name].num_of_stocks: # todo: need to be self.stocks[stock_name].num_of_stocks_owned?
                 num_of_stocks = self.stocks[stock_name].num_of_stocks
             elif num_of_stocks * self.stocks[stock_name].last_low_price >= self.balance:
                 num_of_stocks = int(self.balance / (self.stocks[stock_name].last_low_price))
