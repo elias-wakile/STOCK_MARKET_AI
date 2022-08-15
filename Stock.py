@@ -82,17 +82,19 @@ class Stock:
             self.stock_price_momentum *= newday_momentum
 
         # Compute differentials (momenta)
-        per_var = (self.daily_highest - high_price) / (self.daily_lowest - low_price)
+        per_var = (self.daily_highest - high_price) / self.daily_highest
         volume_var = volume / self.last_market_volume
         price_var = open_price / close_price
 
         # Update accelerations
         self.time_stamp = curr_time
-        self.daily_precentile_momentum += momentum * (per_var - self.per_var)
-        self.daily_precentile_acceleration = 1 - per_var / self.per_var
-        self.market_volume_momentum += momentum * (volume_var - self.volume_var)
+        if not new_day:
+            self.daily_precentile_momentum += momentum * (per_var - self.per_var)
+            self.market_volume_momentum += momentum * (volume_var - self.volume_var)
+            self.stock_price_momentum += momentum * (price_var - self.price_var)
+        if self.per_var != 0:
+            self.daily_precentile_acceleration = 1 - per_var / self.per_var
         self.market_volume_acceleration = 1 - (volume_var / self.volume_var)
-        self.stock_price_momentum += momentum * (price_var - self.price_var)
         self.stock_price_acceleration = 1 - (price_var / self.price_var)
 
         # Update differentials

@@ -1,19 +1,14 @@
 import math
 import numpy as np
-import pandas as pd
 import tensorflow as tf
-import pandas_datareader as data_reader
-import talib
-from ta.trend import ADXIndicator
-from sklearn.model_selection import train_test_split
-
+from pandas.tseries.offsets import BDay
+import datetime
+import pandas as pd
 from PortFolio import PortFolio
-from Stock import Stock
-from StockData import StockData
 import keras.backend as K
 from tqdm import tqdm_notebook, tqdm
 from collections import deque
-
+from pandas.tseries.holiday import USFederalHolidayCalendar
 
 def huber_loss(y_true, y_pred, clip_delta=1.0):
     """Huber loss - Custom Loss Function for Q Learning
@@ -39,67 +34,6 @@ def stocks_price_format(n):
         return "$ {0:2f}".format(abs(n))
 
 
-def dataset_loader(stock_name):
-    dataset = data_reader.DataReader(stock_name, data_source="yahoo")
-    tmp = dataset
-
-    dataset['CCI'] = CCI(tmp, 20)
-    dataset['MACD'] = MACD(tmp)
-    # start_date = str(dataset.index[0]).split()[0]
-    # end_date = str(dataset.index[1]).split()[0]
-    reversed_df = dataset.iloc[::-1]
-    dataset["RSI"] = talib.RSI(reversed_df["Close"], 14)
-    # close = dataset['Close']
-    dataset["ADX"] = ADX(tmp) # todo: erase the warning
-    return dataset[27:]
-
-
-def ADX(dataset):
-    dataset['Adj Open'] = dataset.Open * dataset['Adj Close'] / dataset['Close']
-    dataset['Adj High'] = dataset.High * dataset['Adj Close'] / dataset['Close']
-    dataset['Adj Low'] = dataset.Low * dataset['Adj Close'] / dataset['Close']
-    dataset.dropna(inplace=True)
-    adxI = ADXIndicator(dataset['Adj High'], dataset['Adj Low'], dataset['Adj Close'], 14, False)
-    dataset['pos_directional_indicator'] = adxI.adx_pos()
-    dataset['neg_directional_indicator'] = adxI.adx_neg()
-    dataset['ADX'] = adxI.adx()
-    dataset.tail()
-    return dataset["ADX"]
-
-
-def MACD(dataset):
-    # Get the 26-day EMA of the closing price
-    k = dataset['Close'].ewm(span=12, adjust=False, min_periods=12).mean()
-    # Get the 12-day EMA of the closing price
-    d = dataset['Close'].ewm(span=26, adjust=False, min_periods=26).mean()
-    # Subtract the 26-day EMA from the 12-Day EMA to get the MACD
-    macd = k - d
-    return macd
-
-
-def RSI(data, window=14, adjust=False):
-    delta = data['Close'].diff(1).dropna()
-    loss = delta.copy()
-    gains = delta.copy()
-
-    gains[gains < 0] = 0
-    loss[loss > 0] = 0
-
-    gain_ewm = gains.ewm(com=window - 1, adjust=adjust).mean()
-    loss_ewm = abs(loss.ewm(com=window - 1, adjust=adjust).mean())
-
-    RS = gain_ewm / loss_ewm
-    RSI = 100 - 100 / (1 + RS)
-
-    return RSI
-
-
-def CCI(data, ndays=20):
-    TP = (data['High'] + data['Low'] + data['Close']) / 3
-    CCI = pd.Series(
-        (TP - TP.rolling(window=ndays, center=False).mean()) / (0.015 * TP.rolling(window=ndays, center=False).std()),
-        name='CCI')
-    return CCI
 
 
 def state_creator(dataset, timestep):
@@ -150,15 +84,37 @@ def run_trader(trader, data, batch_size):
 
         if len(trader.memory) > batch_size:  # todo: I add and t % (batch_size / 2) == 0  mey mastic
             trader.batch_train(batch_size)
+def make_date_list():
+    start_date = datetime.datetime.now() - datetime.timedelta(45)
+    end_date = (datetime.datetime.now() - datetime.timedelta(1))
+    cal = USFederalHolidayCalendar()
+    holidays = cal.holidays(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d')).to_pydatetime()
+    holidays_f = []
+    for day in holidays:
+        holidays_f.append(day.strftime('%Y-%m-%d'))
+    date_list = pd.date_range(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), freq="B")
+    date_list_f = []
+    for day_w in date_list:
+        tmp = day_w.strftime('%Y-%m-%d')
+        if tmp not in holidays_f:
+            date_list_f.append(tmp)
+
+    return date_list_f
 
 
 if __name__ == "__main__":
-    stock_name = "AAPL"
-    # stock_o = Stock(stock_name)
-    # stock_data = StockData(stock_name, "2020-06-02", "max", "2022-06-02", stock_o)
-    porfolio = PortFolio(1000, [stock_name], "max", [f"2022-01-0{i}" for i in range(1, 10)], {stock_name: 0}) # todo: to understend what is the part of period in PortFolio
-    porfolio.update_portfolio()
-    b = porfolio.getState()
+    stock_name = ["AAPL"]
+    date_list = make_date_list()
+
+    porfolio = PortFolio(1000, stock_name, "2m", date_list, {name: i for name , i in enumerate(stock_name)})
+    i = 0
+    while not porfolio.end_data():
+        b = porfolio.getState()
+        porfolio.update_portfolio()
+        print(i)
+        i += 1
+    print("yes!!!!")
+
 
     a = 7
 

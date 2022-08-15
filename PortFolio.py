@@ -1,16 +1,17 @@
 from Stock import Stock
 from StockData import StockData
 import pandas_datareader.data as pdr
+from datetime import datetime
 import numpy as np
 
 
 class PortFolio:
-    def __init__(self, initial_investment, stock_list, period, date_list, stock_indices):
+    def __init__(self, initial_investment, stock_list, interval, date_list, stock_indices):
         """
         This function is a portfolio constructor
         :param initial_investment: The initial investment in the portfolio
         :param stock_list: the list of stocks we wish to invest in
-        :param period: the period of time we wish to refresh our data
+        :param interval: the interval of time we wish to refresh our data
         :param date_list: the list of days we want our model to work on
         :param stock_indices: A dictionary having as keys the stock names and
                               as values their indices in the state matrix
@@ -19,12 +20,13 @@ class PortFolio:
         self.stock_name_list = stock_list
         self.stocks = dict()
         self.balance = initial_investment
-        self.period = period
+        self.interval = interval
         for stock_name in stock_list:
             self.stocks[stock_name] = Stock(stock_name)
         self.date_list = date_list
         self.stock_indices = stock_indices
         self.features_num = 20  # todo: was 18 but in getState there is 20 features
+        self.next_day()
 
     def next_day(self):
         """
@@ -36,7 +38,7 @@ class PortFolio:
             next_date = self.date_list[1]
             self.date_list = self.date_list[1:]
             self.stock_market = {stock_name: StockData(stock_name, curr_date,
-                                                       self.period, next_date,
+                                                       self.interval, next_date,
                                                        self.stocks[stock_name], 10e-1)
                                  for stock_name in self.stock_name_list} # todo: what this need to be ?
 
@@ -45,9 +47,10 @@ class PortFolio:
         This function updates the portfolio for the current date
         """
         for stock_name in self.stock_name_list:
-            if self.stock_market[stock_name].update_stock() == 1:
+            if not self.stock_market[stock_name].update_stock():
                 self.next_day()
-                self.stock_market[stock_name].update_stock()
+                break
+                # self.stock_market[stock_name].update_stock()
 
     def getBalance(self):
         """
@@ -70,8 +73,8 @@ class PortFolio:
         the columns represent the different values of the parameters
         """
         state = np.zeros((len(self.stock_name_list), self.features_num))
-        for stock_name in self.stock_indices.keys():
-            line_index = self.stock_indices[stock_name]
+        for line_index in self.stock_indices.keys():
+            stock_name = self.stock_indices[line_index]
             state[line_index, 0] = self.stocks[stock_name].daily_highest
             state[line_index, 1] = self.stocks[stock_name].daily_lowest
             state[line_index, 2] = self.stocks[stock_name].daily_precentile_acceleration
@@ -94,6 +97,18 @@ class PortFolio:
             state[line_index, 19] = self.stocks[stock_name].price_per_stock
         return state
 
+    def end_data(self):
+        """
+        This function check if there is more data to check
+        :return: True if we look over all the data else False
+        """
+        if len(self.date_list) == 1:
+            for stock_name in self.stock_name_list:
+                if not self.stock_market[stock_name].is_end_day():
+                    return False
+            return True
+        return False
+
     def act(self, stock_predictions):
         """
         This function executes the predictions of the Model
@@ -106,10 +121,10 @@ class PortFolio:
         for stock_name in self.stock_indices.keys():
             index = self.stock_indices[stock_name]
             num_of_stocks = stock_predictions[index]
-            if num_of_stocks < -self.stocks[stock_name].num_of_stocks: # todo: need to be self.stocks[stock_name].num_of_stocks_owned?
-                num_of_stocks = self.stocks[stock_name].num_of_stocks
+            if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:
+                num_of_stocks = self.stocks[stock_name].num_of_stocks_owned
             elif num_of_stocks * self.stocks[stock_name].last_low_price >= self.balance:
-                num_of_stocks = int(self.balance / (self.stocks[stock_name].last_low_price))
+                num_of_stocks = int(self.balance / self.stocks[stock_name].last_low_price)
             curr_loss = self.stocks[stock_name].trade(stock_predictions[stock_name])
             if num_of_stocks < 0:
                 self.balance += num_of_stocks * self.stocks[stock_name].last_high_price

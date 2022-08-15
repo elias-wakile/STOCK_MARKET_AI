@@ -4,7 +4,7 @@ import yfinance as yf
 
 
 class StockData:
-    def __init__(self, name, start_date, period, end_date, stock, momentum=10e-1):
+    def __init__(self, name, start_date, interval, end_date, stock, momentum=10e-1):
         """
         This function initializes the stock data object
         :param name: the stock name
@@ -14,7 +14,8 @@ class StockData:
         :param stock: the stock object
         :param momentum: the momentum of the acceleration
         """
-        self.stock_data = yf.download(name, start=start_date, period=period, end=end_date) # todo: why we need slicing of this numbers?[29:329]
+        tic = yf.Ticker(name)
+        self.stock_data = tic.history(start=start_date, interval=interval, end=end_date) # todo: why we need slicing of this numbers?[29:329]
         self.stock_data["RSI"] = pta.rsi(self.stock_data["Close"], length=14)
         self.stock_data["ADX"] = \
             pta.adx(self.stock_data["High"], self.stock_data["Low"], self.stock_data["Close"], length=7)["ADX_7"]
@@ -24,7 +25,7 @@ class StockData:
         self.momentum = momentum
         self.time_stamp = 13 # todo: was 0 change to 14 because there is nun in RSI until 14
         self.stock = stock
-        self.max_time_stamp = self.stock_data.size
+        self.max_time_stamp = self.stock_data.shape[0]
         self.update_new_day()
 
     def update_stock(self):
@@ -32,8 +33,8 @@ class StockData:
         This function updates the stock this object modelizes the data
         """
         self.time_stamp += 1
-        if self.time_stamp == self.stock_data.size:
-            return 0
+        if self.is_end_day():
+            return False
         stock_now = self.stock_data.iloc[self.time_stamp]
         low_price = stock_now["Low"]
         high_price = stock_now["High"]
@@ -46,7 +47,16 @@ class StockData:
         cci = stock_now["CCI"]
         self.stock.update(volume, low_price, high_price, open_price, close_price,
                           self.time_stamp, rsi, adx, cci, macd, self.momentum)
-        return 1
+        return True
+
+    def is_end_day(self):
+        """
+        check if we get over all the daily data
+        :return: Ture in case we get over all the data
+        """
+        if self.time_stamp == self.max_time_stamp - 1:
+            return True
+        return False
 
     def update_new_day(self):
         """
