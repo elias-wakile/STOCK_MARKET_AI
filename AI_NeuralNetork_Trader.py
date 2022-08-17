@@ -109,12 +109,16 @@ def run_trader(neuralNet, porfolio, batch_size, neru_dic, reall_dic):
     done = False
     states = porfolio.getState().tolist()
     size_loop = porfolio.stock_market[stock_names[0]].stock_data.shape[0] * len(date_list)
+    use_state = [0.5] * len(states[0])
     neuralNet.memory.clear()
     while not done:
-        action = neuralNet.act(states) - int(neuralNet.action_space / 2)  # make this to be between -1 to 1
+        action = neuralNet.act(use_state) - int(neuralNet.action_space / 2)  # make this to be between -1 to 1
         neru_dic[action] += 1
         porfolio.update_portfolio()
         next_states = porfolio.getState().tolist()
+        for j in range(len(use_state)):
+            # print(i)
+            use_state[j] = sigmoid(next_states[0][j] - states[0][j])
         stock_predictions = {"AAPL": action}
         results, action_new = porfolio.act(stock_predictions)
         reall_dic[action_new[0]] += 1

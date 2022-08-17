@@ -29,7 +29,7 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 
 
 class AI_Trader:
-    def __init__(self, state_size, action_space=3, model_name="AITrader"):
+    def __init__(self, state_size, action_space=3, model_name="AITrader", balance = 1000):
 
         self.state_size = state_size
         self.action_space = action_space
@@ -43,6 +43,10 @@ class AI_Trader:
         self.epsilon = 1.0
         self.epsilon_final = 0.01
         self.epsilon_decay = 0.995
+        self.balance = balance
+        self.num_own_stock = 0
+        self.money_in_stock = 0
+        self.avg_stock_p = 0
         self.model = self.model_builder()
 
     def model_builder(self):
@@ -57,11 +61,17 @@ class AI_Trader:
     def trade(self, state):
         if random.random() <= self.epsilon:
             return random.randrange(self.action_space)
-        if self.first_iter:
-            self.first_iter = False
-            return 1
+        # if self.first_iter:
+        #     self.first_iter = False
+        #     return 1
         actions = self.model.predict(state)
         return np.argmax(actions)
+
+    def reset_episod(self, balance):
+        self.balance = balance
+        self.num_own_stock = 0
+        self.money_in_stock = 0
+        self.avg_stock_p = 0
 
     def batch_train(self, batch_size):
 
@@ -114,7 +124,7 @@ def dataset_loader(stock_name, delta_days, interval):
     start_date = datetime.datetime.now() - datetime.timedelta(delta_days)
     end_date = (datetime.datetime.now() - datetime.timedelta(1))
     dataset = tic.history(start=start_date.strftime('%Y-%m-%d'), interval=interval, end=end_date.strftime('%Y-%m-%d'))
-    tmp = data_reader.DataReader(stock_name, data_source="yahoo")
+    # tmp = data_reader.DataReader(stock_name, data_source="yahoo")
     dataset["RSI"] = pta.rsi(dataset["Close"], length=14)
     dataset["ADX"] = pta.adx(dataset["High"], dataset["Low"], dataset["Close"], length=7)["ADX_7"]
     dataset["MACD"] = pta.macd(dataset["Close"], fast=4, slow=12, signal=3)["MACDs_4_12_3"]
@@ -192,39 +202,79 @@ def CCI(data, ndays=20):
 #         state.append(sigmoid(windowed_data[i + 1] - windowed_data[i]))
 #
 #     return np.array([state])
-def state_creator(dataset, timestep):
-    data = dataset.iloc[timestep]
-    state = [data["Close"]]
-    state.append(data["MACD"])
-    state.append(data["RSI"])
-    state.append(data["CCI"])
-    state.append(data["ADX"])
+def state_creator(dataset, timestep, trader):
+    if timestep == 0:
+        state = [0.5] * 5
+        state.append(1)
+        state.append(0)
+        return [state]
+    data_c = dataset.iloc[timestep]
+    data_p = dataset.iloc[timestep - 1]
+    state = [sigmoid(data_c["Close"] - data_p["Close"]), sigmoid(data_c["MACD"] - data_p["MACD"]),
+             sigmoid(data_c["RSI"] - data_p["RSI"]), sigmoid(data_c["CCI"] - data_p["CCI"]),
+             sigmoid(data_c["ADX"] - data_p["ADX"])]
+    if data_c['Close'] > trader.balance:
+        state.append(0)
+    else:
+        state.append(1)
+
+    if trader.num_own_stock > 0:
+        state.append(1)
+    else:
+        state.append(0)
     return np.array([state])
 
 
 def run_trader(trader, data, batch_size):
-    # trader.memory.clear()  # todo: I add this
+    trader.memory.clear()  # todo: I add this
     data_samples = data.shape[0] - 1
-    state = state_creator(data, 0)
+    state = state_creator(data, 0, trader)
     total_profit = 0
     trader.inventory = []
     done = False
 
+
+    act_chose = {0: 0, 1: 0, 2: 0}
+    act_do = {0: 0, 1: 0, 2: 0}
+
     for t in tqdm(range(data_samples)):
 
+
         action = trader.trade(state)
-        next_state = state_creator(data, t + 1)
+        next_state = state_creator(data, t + 1, trader)
         reward = 0
         if action == 1:  # Buying
-            trader.inventory.append(data['Close'][t])
-            print("AI Trader bought: ", stocks_price_format(data['Close'][t]))
-        elif action == 2 and len(trader.inventory) > 0:  # Selling
-            buy_price = trader.inventory.pop(0)
-
-            reward = data['Close'][t] - buy_price  # todo: may need her max with 0
-            total_profit += data['Close'][t] - buy_price
-            print("AI Trader sold: ", stocks_price_format(data['Close'][t]),
-                  " Profit: " + stocks_price_format(data['Close'][t] - buy_price))
+            act_chose[1] += 1
+            if trader.balance >= data['Close'][t]:
+                act_do[1] += 1
+                trader.inventory.append(data['Close'][t])
+                trader.balance -= data['Close'][t]
+                trader.avg_stock_p = (trader.avg_stock_p * trader.num_own_stock + data['Close'][t]) / (trader.num_own_stock + 1)
+                trader.num_own_stock += 1
+                trader.money_in_stock += data['Close'][t]
+                print("AI Trader bought: ", stocks_price_format(data['Close'][t]))
+            else:
+                act_do[0] += 1
+                print("!!!AI Trader want to buy but can't do this!!!")
+        elif action == 2:  # Selling
+            act_chose[2] += 1
+            if len(trader.inventory) > 0:
+                act_do[2] += 1
+                buy_price = trader.inventory.pop(0)
+                trader.balance += data['Close'][t]
+                trader.num_own_stock -= 1
+                trader.money_in_stock -= trader.avg_stock_p
+                reward = data['Close'][t] - buy_price  # todo: may need her max with 0
+                total_profit += data['Close'][t] - trader.avg_stock_p
+                print("AI Trader sold: ", stocks_price_format(data['Close'][t]),
+                      " Profit: " + stocks_price_format(data['Close'][t] - buy_price))
+            else:
+                act_do[0] += 1
+                print("!!!AI Trader want to sold but can't do this!!!")
+        else:
+            print("AI Trader skip")
+            act_chose[0] += 1
+            act_do[0] += 1
 
         if t == data_samples - 1:  # todo :
             done = True
@@ -236,6 +286,10 @@ def run_trader(trader, data, batch_size):
         if done:
             print("########################")
             print("TOTAL PROFIT: {}".format(total_profit))
+            print("TOTAL VAL: {}".format(trader.balance + trader.money_in_stock))
+            print(f"Chose 0: {act_chose[0]} times and do {act_do[0]} times")
+            print(f"Chose 1: {act_chose[1]} times and do {act_do[1]} times")
+            print(f"Chose 2: {act_chose[2]} times and do {act_do[2]} times")
             print("########################")
 
         if len(trader.memory) > batch_size:  # todo: I add and t % (batch_size / 2) == 0  mey mastic
@@ -244,20 +298,22 @@ def run_trader(trader, data, batch_size):
 
 if __name__ == "__main__":
     stock_name = "AAPL"
-    data = dataset_loader(stock_name, 30, "2m")
-    window_size = 5  # 4
-    episodes = 5
-    train, test = train_test_split(data, test_size=0.5, shuffle=False)
+    data = dataset_loader(stock_name, 20, "5m")
+    state_size = 7  # 4
+    episodes = 10
+    train, test = train_test_split(data, test_size=0.25, shuffle=False)
     budget = 10000
     batch_size = 16  # 64
     data_samples = train.shape[0] - 1
-    trader = AI_Trader(window_size)
+    trader = AI_Trader(state_size)
     for episode in range(1, episodes + 1):
         shares = 0
         print("Episode: {}/{}".format(episode, episodes))
         # state = state_creator(data, 0, window_size + 1)
         run_trader(trader, train, batch_size)
+        trader.reset_episod(budget)
 
         if episode % 5 == 0:
             trader.model.save("ai_trader_{}.h5".format(episode))
+    print("#####  start test  #######")
     run_trader(trader, test, batch_size)

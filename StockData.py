@@ -27,7 +27,7 @@ class StockData:
                                          self.stock_data["Close"],
                                          length=14)
         self.momentum = momentum
-        self.time_stamp = 13  # todo: was 0 change to 14 because there is nun in RSI until 14
+        self.time_stamp = 14  # todo: was 0 change to 14 because there is nun in RSI until 14
         self.stock = stock
         self.max_time_stamp = self.stock_data.shape[0]
         self.update_new_day()

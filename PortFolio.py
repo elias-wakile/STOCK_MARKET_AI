@@ -88,7 +88,7 @@ class PortFolio:
             state[line_index, 6] = self.stocks[stock_name].volume_var
             state[line_index, 7] = self.stocks[stock_name].price_var
             state[line_index, 8] = self.stocks[stock_name].current_price_daily_percentile
-            state[line_index, 9] = self.stocks[stock_name].last_market_volume
+            state[line_index, 9] = self.stocks[stock_name].last_market_volume #todo: problem in big numbers for nurmalized
             state[line_index, 10] = self.stocks[stock_name].last_high_price
             state[line_index, 11] = self.stocks[stock_name].last_low_price
             state[line_index, 12] = self.stocks[stock_name].last_open_price
