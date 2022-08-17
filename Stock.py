@@ -123,7 +123,7 @@ class Stock:
         :return: The potentiality of this buy
         """
         self.num_of_stocks_owned += amount_of_stocks
-        self.money_in_stock -= amount_of_stocks * self.last_low_price
+        self.money_in_stock += amount_of_stocks * self.last_low_price # todo: ????
         self.price_per_stock = min(self.daily_lowest,
                                    self.money_in_stock / self.num_of_stocks_owned)
         print(f"Bought {amount_of_stocks} stocks of {self.stock_name}"
@@ -139,7 +139,9 @@ class Stock:
         if amount_of_stocks > self.num_of_stocks_owned:
             amount_of_stocks = self.num_of_stocks_owned
         self.num_of_stocks_owned -= amount_of_stocks
-        self.money_in_stock += amount_of_stocks * self.last_high_price
+        self.money_in_stock -= amount_of_stocks * self.last_high_price # todo: I think this need to be the avreag and not the last_high_price
+        if self.num_of_stocks_owned == 0:
+            self.money_in_stock = 0
         print(f"Sold {amount_of_stocks} stocks of {self.stock_name}"
               f" for a price of {self.last_high_price}$ per stock.")
         return (1 - (self.last_high_price / self.daily_highest)) * amount_of_stocks * self.last_high_price
@@ -149,12 +151,16 @@ class Stock:
         This function computes the potentiality of keeping the stocks
         :return: The potentiality of this keeping
         """
+        print("Keep the stock")
+        rate = 0
         if self.RSI >= 70:
             rate = self.price_per_stock / self.daily_lowest
         elif self.RSI <= 30:
             rate = self.price_per_stock / self.daily_highest
-        else:
+        elif self.price_per_stock != 0:
             rate = self.last_low_price / self.price_per_stock
+        else:
+            return 0
         return (1 - rate) * self.num_of_stocks_owned * self.last_low_price
 
     def trade(self, prediction):
@@ -165,7 +171,7 @@ class Stock:
         :return:
         """
         if prediction < 0:
-            return self.sell(prediction)
+            return self.sell(prediction * -1)
         elif prediction > 0:
             return self.buy(prediction)
         return self.keep()

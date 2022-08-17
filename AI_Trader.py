@@ -1,5 +1,7 @@
 import math
 import random
+import datetime
+import pandas_ta as pta
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -11,6 +13,7 @@ from sklearn.model_selection import train_test_split
 import keras.backend as K
 from tqdm import tqdm_notebook, tqdm
 from collections import deque
+import yfinance as yf
 
 
 def huber_loss(y_true, y_pred, clip_delta=1.0):
@@ -23,6 +26,7 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
     squared_loss = 0.5 * K.square(error)
     quadratic_loss = 0.5 * K.square(clip_delta) + clip_delta * (K.abs(error) - clip_delta)
     return K.mean(tf.where(cond, squared_loss, quadratic_loss))
+
 
 class AI_Trader:
     def __init__(self, state_size, action_space=3, model_name="AITrader"):
@@ -43,9 +47,9 @@ class AI_Trader:
 
     def model_builder(self):
         model = tf.keras.models.Sequential()
-        model.add(tf.keras.layers.Dense(units=10, activation='relu', input_dim=self.state_size))
-        model.add(tf.keras.layers.Dense(units=24, activation='relu'))
-        model.add(tf.keras.layers.Dense(units=48, activation='relu'))
+        model.add(tf.keras.layers.Dense(units=32, activation='relu', input_dim=self.state_size))
+        model.add(tf.keras.layers.Dense(units=64, activation='relu'))
+        model.add(tf.keras.layers.Dense(units=128, activation='relu'))
         model.add(tf.keras.layers.Dense(units=self.action_space, activation='linear'))
         model.compile(loss=self.loss, optimizer=tf.keras.optimizers.Adam(learning_rate=0.001))
         return model
@@ -61,10 +65,10 @@ class AI_Trader:
 
     def batch_train(self, batch_size):
 
-        batch = random.sample(self.memory, batch_size)
-        # batch = []
-        # for i in range(len(self.memory) - batch_size + 1, len(self.memory)):
-        #     batch.append(self.memory[i])
+        # batch = random.sample(self.memory, batch_size)
+        batch = []
+        for i in range(len(self.memory) - batch_size + 1, len(self.memory)):
+            batch.append(self.memory[i])
 
         X_train, y_train = [], []
 
@@ -104,19 +108,27 @@ def stocks_price_format(n):
         return "$ {0:2f}".format(abs(n))
 
 
-def dataset_loader(stock_name):
-    dataset = data_reader.DataReader(stock_name, data_source="yahoo")
-    tmp = dataset
+def dataset_loader(stock_name, delta_days, interval):
+    # dataset = data_reader.DataReader(stock_name, data_source="yahoo")
+    tic = yf.Ticker(stock_name)
+    start_date = datetime.datetime.now() - datetime.timedelta(delta_days)
+    end_date = (datetime.datetime.now() - datetime.timedelta(1))
+    dataset = tic.history(start=start_date.strftime('%Y-%m-%d'), interval=interval, end=end_date.strftime('%Y-%m-%d'))
+    tmp = data_reader.DataReader(stock_name, data_source="yahoo")
+    dataset["RSI"] = pta.rsi(dataset["Close"], length=14)
+    dataset["ADX"] = pta.adx(dataset["High"], dataset["Low"], dataset["Close"], length=7)["ADX_7"]
+    dataset["MACD"] = pta.macd(dataset["Close"], fast=4, slow=12, signal=3)["MACDs_4_12_3"]
+    dataset["CCI"] = pta.cci(dataset["High"], dataset["Low"], dataset["Close"], length=14)
 
-    dataset['CCI'] = CCI(tmp, 20)
-    dataset['MACD'] = MACD(tmp)
-    # start_date = str(dataset.index[0]).split()[0]
-    # end_date = str(dataset.index[1]).split()[0]
-    reversed_df = dataset.iloc[::-1]
-    dataset["RSI"] = talib.RSI(reversed_df["Close"], 14)
-    # close = dataset['Close']
-    dataset["ADX"] = ADX(tmp) # todo: erase the warning
-    return dataset[27:]
+    # dataset['CCI'] = CCI(tmp, 20)
+    # dataset['MACD'] = MACD(tmp)
+    # # start_date = str(dataset.index[0]).split()[0]
+    # # end_date = str(dataset.index[1]).split()[0]
+    # reversed_df = dataset.iloc[::-1]
+    # dataset["RSI"] = talib.RSI(reversed_df["Close"], 14)
+    # # close = dataset['Close']
+    # dataset["ADX"] = ADX(tmp)  # todo: erase the warning
+    return dataset[14:]
 
 
 def ADX(dataset):
@@ -182,7 +194,7 @@ def CCI(data, ndays=20):
 #     return np.array([state])
 def state_creator(dataset, timestep):
     data = dataset.iloc[timestep]
-    state = [data["Adj Close"]]
+    state = [data["Close"]]
     state.append(data["MACD"])
     state.append(data["RSI"])
     state.append(data["CCI"])
@@ -214,7 +226,7 @@ def run_trader(trader, data, batch_size):
             print("AI Trader sold: ", stocks_price_format(data['Close'][t]),
                   " Profit: " + stocks_price_format(data['Close'][t] - buy_price))
 
-        if t == data_samples - 1: # todo :
+        if t == data_samples - 1:  # todo :
             done = True
 
         trader.memory.append((state, action, reward, next_state, done))
@@ -232,12 +244,12 @@ def run_trader(trader, data, batch_size):
 
 if __name__ == "__main__":
     stock_name = "AAPL"
-    data = dataset_loader(stock_name)
+    data = dataset_loader(stock_name, 30, "2m")
     window_size = 5  # 4
     episodes = 5
     train, test = train_test_split(data, test_size=0.5, shuffle=False)
-    budget = 1000
-    batch_size = 16 # 64
+    budget = 10000
+    batch_size = 16  # 64
     data_samples = train.shape[0] - 1
     trader = AI_Trader(window_size)
     for episode in range(1, episodes + 1):
@@ -249,4 +261,3 @@ if __name__ == "__main__":
         if episode % 5 == 0:
             trader.model.save("ai_trader_{}.h5".format(episode))
     run_trader(trader, test, batch_size)
-

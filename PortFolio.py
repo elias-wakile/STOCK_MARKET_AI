@@ -26,6 +26,7 @@ class PortFolio:
         self.date_list = date_list
         self.stock_indices = stock_indices
         self.features_num = 20  # todo: was 18 but in getState there is 20 features
+        self.stock_market = {}
         self.next_day()
 
     def next_day(self):
@@ -62,8 +63,8 @@ class PortFolio:
         for stock in self.stock_name_list:
             stock_balance += self.stocks[stock].money_in_stock
         print(f"Your Portfolio currently has a balance of {self.balance}, owns"
-              f"a stock of total value {stock_balance} and is of total value of"
-              f"{stock_balance + self.balance}.")
+              f"a stock of total value {stock_balance} and is of total value of "
+              f"{stock_balance + self.balance}.") # todo: there is no update of the stock of total value
         return stock_balance + self.balance
 
     def getState(self):
@@ -118,17 +119,23 @@ class PortFolio:
         :return: A reward vector of the same format
         """
         results = [0] * len(self.stock_name_list)
-        for stock_name in self.stock_indices.keys():
-            index = self.stock_indices[stock_name]
-            num_of_stocks = stock_predictions[index]
+        real_act = [0] * len(self.stock_name_list)
+        for index in self.stock_indices.keys():
+            stock_name = self.stock_indices[index]
+            num_of_stocks = stock_predictions[stock_name]
             if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:
-                num_of_stocks = self.stocks[stock_name].num_of_stocks_owned
+                num_of_stocks = -self.stocks[stock_name].num_of_stocks_owned
             elif num_of_stocks * self.stocks[stock_name].last_low_price >= self.balance:
                 num_of_stocks = int(self.balance / self.stocks[stock_name].last_low_price)
-            curr_loss = self.stocks[stock_name].trade(stock_predictions[stock_name])
+            curr_loss = self.stocks[stock_name].trade(num_of_stocks)
             if num_of_stocks < 0:
-                self.balance += num_of_stocks * self.stocks[stock_name].last_high_price
+                self.balance += -num_of_stocks * self.stocks[stock_name].last_high_price # I think this is the sell so
+                # I cheng the num_of_stocks to be -num_of_stocks
             elif num_of_stocks > 0:
                 self.balance -= num_of_stocks * self.stocks[stock_name].last_low_price
             results[index] = curr_loss
-        return np.array(results)
+            real_act[index] = num_of_stocks
+            if stock_predictions[stock_name] != num_of_stocks:
+                print("want to do: " + str(stock_predictions[stock_name]) + " but do " + str(num_of_stocks))
+        # return np.array(results)
+        return np.array(results), np.array(real_act)
