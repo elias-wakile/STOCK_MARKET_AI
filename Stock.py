@@ -116,6 +116,8 @@ class Stock:
         self.CCI = CCI
         self.RSI = RSI
 
+        self.money_in_stock = self.num_of_stocks_owned * self.daily_highest
+
     def buy(self, amount_of_stocks: int):
         """
         This function process a buying of stocks
@@ -128,7 +130,8 @@ class Stock:
                                    self.money_in_stock / self.num_of_stocks_owned)
         print(f"Bought {amount_of_stocks} stocks of {self.stock_name}"
               f" for a price of {self.last_low_price}$ per stock.")
-        return (1 - (self.daily_lowest / self.last_low_price)) * amount_of_stocks * self.last_low_price
+        # return (1 - (self.daily_lowest / self.last_low_price)) * amount_of_stocks * self.last_low_price
+        return [self.num_of_stocks_owned,self.last_low_price]
 
     def sell(self, amount_of_stocks):
         """
@@ -139,12 +142,13 @@ class Stock:
         if amount_of_stocks > self.num_of_stocks_owned:
             amount_of_stocks = self.num_of_stocks_owned
         self.num_of_stocks_owned -= amount_of_stocks
-        self.money_in_stock -= amount_of_stocks * self.last_high_price # todo: I think this need to be the avreag and not the last_high_price
+        self.money_in_stock -= amount_of_stocks * self.last_high_price
         if self.num_of_stocks_owned == 0:
             self.money_in_stock = 0
         print(f"Sold {amount_of_stocks} stocks of {self.stock_name}"
               f" for a price of {self.last_high_price}$ per stock.")
-        return (1 - (self.last_high_price / self.daily_highest)) * amount_of_stocks * self.last_high_price
+        # return (1 - (self.last_high_price / self.daily_highest)) * amount_of_stocks * self.last_high_price
+        return [self.num_of_stocks_owned,self.last_high_price]
 
     def keep(self):
         """
@@ -161,7 +165,8 @@ class Stock:
             rate = self.last_low_price / self.price_per_stock
         else:
             return 0
-        return (1 - rate) * self.num_of_stocks_owned * self.last_low_price
+        # return (1 - rate) * self.num_of_stocks_owned * self.last_low_price
+        return  "X"
 
     def trade(self, prediction):
         """

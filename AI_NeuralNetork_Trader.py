@@ -125,7 +125,7 @@ def run_trader(neuralNet, porfolio, batch_size, neru_dic, reall_dic):
         i += 1
         porfolio.getBalance()
         # if i % 25 == 0:
-        #     print(f'run:{i} from{size_loop}')
+        print(f'run:{i} from {size_loop}')
         done = porfolio.end_data()
     porfolio.getBalance()
     for i in range(-int(neuralNet.action_space / 2), int(neuralNet.action_space / 2) + 1):
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     # vars for NeuralNetwork
     episodes = 5
     state_size = porfolio.features_num  # todo: if there is more then one stock this need to cheng
-    action_space = 3  # todo: if there is more then one stock this need to cheng
+    action_space = 3  # todo: if there is more then one stock this need to cheng ODD
     signal_rate = 1  # todo: what is this parmeter?
 
     neru_dic = dict()

@@ -15,15 +15,19 @@ class StockData:
         :param momentum: the momentum of the acceleration
         """
         tic = yf.Ticker(name)
-        self.stock_data = tic.history(start=start_date, interval=interval, end=end_date) # todo: why we need slicing of this numbers?[29:329]
+        self.stock_data = tic.history(start=start_date, interval=interval,
+                                      end=end_date)  # todo: why we need slicing of this numbers?[29:329]
         self.stock_data["RSI"] = pta.rsi(self.stock_data["Close"], length=14)
         self.stock_data["ADX"] = \
-            pta.adx(self.stock_data["High"], self.stock_data["Low"], self.stock_data["Close"], length=7)["ADX_7"]
-        self.stock_data["MACD"] = pta.macd(self.stock_data["Close"], fast=4, slow=12, signal=3)["MACDs_4_12_3"]
-        self.stock_data["CCI"] = pta.cci(self.stock_data["High"], self.stock_data["Low"], self.stock_data["Close"],
+            pta.adx(self.stock_data["High"], self.stock_data["Low"], self.stock_data["Close"],
+                    length=7)["ADX_7"]
+        self.stock_data["MACD"] = pta.macd(self.stock_data["Close"], fast=4, slow=12, signal=3)[
+            "MACDs_4_12_3"]
+        self.stock_data["CCI"] = pta.cci(self.stock_data["High"], self.stock_data["Low"],
+                                         self.stock_data["Close"],
                                          length=14)
         self.momentum = momentum
-        self.time_stamp = 13 # todo: was 0 change to 14 because there is nun in RSI until 14
+        self.time_stamp = 13  # todo: was 0 change to 14 because there is nun in RSI until 14
         self.stock = stock
         self.max_time_stamp = self.stock_data.shape[0]
         self.update_new_day()
