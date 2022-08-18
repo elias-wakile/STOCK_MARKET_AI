@@ -9,6 +9,7 @@ import pandas_datareader as data_reader
 # import talib
 from ta.trend import ADXIndicator
 from sklearn.model_selection import train_test_split
+from keras.models import load_model, clone_model
 
 import keras.backend as K
 from tqdm import tqdm_notebook, tqdm
@@ -29,7 +30,7 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 
 
 class AI_Trader:
-    def __init__(self, state_size, action_space=3, model_name="AITrader", balance = 1000):
+    def __init__(self, state_size, action_space=3, model_name="AITrader", balance=1000, lodModel=None):
 
         self.state_size = state_size
         self.action_space = action_space
@@ -47,7 +48,14 @@ class AI_Trader:
         self.num_own_stock = 0
         self.money_in_stock = 0
         self.avg_stock_p = 0
-        self.model = self.model_builder()
+        self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
+        if lodModel is None:
+            self.model = self.model_builder()
+        else:
+            self.model = self.load()
+
+    def load(self):
+        return load_model("ai_trader.h5", custom_objects=self.custom_objects)
 
     def model_builder(self):
         model = tf.keras.models.Sequential()
@@ -233,12 +241,10 @@ def run_trader(trader, data, batch_size):
     trader.inventory = []
     done = False
 
-
     act_chose = {0: 0, 1: 0, 2: 0}
     act_do = {0: 0, 1: 0, 2: 0}
 
     for t in tqdm(range(data_samples)):
-
 
         action = trader.trade(state)
         next_state = state_creator(data, t + 1, trader)
@@ -249,7 +255,8 @@ def run_trader(trader, data, batch_size):
                 act_do[1] += 1
                 trader.inventory.append(data['Close'][t])
                 trader.balance -= data['Close'][t]
-                trader.avg_stock_p = (trader.avg_stock_p * trader.num_own_stock + data['Close'][t]) / (trader.num_own_stock + 1)
+                trader.avg_stock_p = (trader.avg_stock_p * trader.num_own_stock + data['Close'][t]) / (
+                            trader.num_own_stock + 1)
                 trader.num_own_stock += 1
                 trader.money_in_stock += data['Close'][t]
                 print("AI Trader bought: ", stocks_price_format(data['Close'][t]))
@@ -284,9 +291,10 @@ def run_trader(trader, data, batch_size):
         state = next_state
 
         if done:
+            tmp = data['Close'][t] * trader.num_own_stock
             print("########################")
             print("TOTAL PROFIT: {}".format(total_profit))
-            print("TOTAL VAL: {}".format(trader.balance + trader.money_in_stock))
+            print("TOTAL VAL: {}".format(trader.balance + tmp))
             print(f"Chose 0: {act_chose[0]} times and do {act_do[0]} times")
             print(f"Chose 1: {act_chose[1]} times and do {act_do[1]} times")
             print(f"Chose 2: {act_chose[2]} times and do {act_do[2]} times")
@@ -298,14 +306,14 @@ def run_trader(trader, data, batch_size):
 
 if __name__ == "__main__":
     stock_name = "AAPL"
-    data = dataset_loader(stock_name, 20, "5m")
+    data = dataset_loader(stock_name, 55, "2m")
     state_size = 7  # 4
-    episodes = 10
+    episodes = 20
     train, test = train_test_split(data, test_size=0.25, shuffle=False)
     budget = 10000
     batch_size = 16  # 64
     data_samples = train.shape[0] - 1
-    trader = AI_Trader(state_size)
+    trader = AI_Trader(state_size, lodModel="Yes")
     for episode in range(1, episodes + 1):
         shares = 0
         print("Episode: {}/{}".format(episode, episodes))
