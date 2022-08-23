@@ -26,7 +26,13 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 
 
 def sigmoid(x):
-    return 1 / (1 + math.exp(-x))
+    tmp = 0
+    try:
+        tmp = 1 / (1 + math.exp(-x))
+    except:
+        print(x)
+        raise
+    return tmp
 
 
 def stocks_price_format(n):
@@ -117,8 +123,12 @@ def run_trader(neuralNet, porfolio, batch_size, neru_dic, reall_dic):
         porfolio.update_portfolio()
         next_states = porfolio.getState().tolist()
         for j in range(len(use_state)):
-            # print(i)
-            use_state[j] = sigmoid(next_states[0][j] - states[0][j])
+            if next_states[0][j] - states[0][j] <= -981.0:
+                use_state[j] = 1
+            elif next_states[0][j] - states[0][j] > 1000000:
+                use_state[j] = 0
+            else:
+                use_state[j] = sigmoid(next_states[0][j] - states[0][j])
         stock_predictions = {"AAPL": action}
         results, action_new = porfolio.act(stock_predictions)
         reall_dic[action_new[0]] += 1
@@ -144,8 +154,6 @@ if __name__ == "__main__":
     interval = "5m"
     stock_indices = {name: i for name, i in enumerate(stock_names)}
     initial_investment = 10000
-    neru_dic = {}
-    reall_dic = {}
 
     porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices)
 
