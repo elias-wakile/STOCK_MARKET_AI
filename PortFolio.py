@@ -5,7 +5,7 @@ import numpy as np
 
 
 class PortFolio:
-    def __init__(self, initial_investment, stock_list, interval, date_list, stock_indices, state_size=7):
+    def __init__(self, initial_investment, stock_list, interval, date_list, stock_indices,file, state_size=7):
         """
         This function is a portfolio constructor
         :param initial_investment: The initial investment in the portfolio
@@ -21,8 +21,9 @@ class PortFolio:
         self.balance = initial_investment
         self.interval = interval
         self.rewards_dict = {}
+        self.file = file
         for stock_name in stock_list:
-            self.stocks[stock_name] = Stock(stock_name)
+            self.stocks[stock_name] = Stock(stock_name,self.file)
             self.rewards_dict[stock_name] = []
         self.date_list = date_list
         self.stock_indices = stock_indices
@@ -55,6 +56,9 @@ class PortFolio:
         print(f"Your Portfolio currently has a balance of {self.balance}, owns"
               f" a stock of total value {stock_balance} and is of total value of "
               f"{stock_balance + self.balance}.")  # todo: there is no update of the stock of total value
+        self.file.write(f"Current balance: {self.balance}."
+                   f"Total stock(s) value:  {stock_balance}."
+                   f"Total value: {stock_balance + self.balance}.\n")
         return stock_balance + self.balance
 
     def getState(self):
@@ -78,8 +82,6 @@ class PortFolio:
                     get_st = np.append(get_st, [[1]])
             state[line_index, :] = get_st
 
-
-
             # state[line_index, 0] = self.stocks[stock_name].daily_highest
             # state[line_index, 1] = self.stocks[stock_name].daily_lowest
             # state[line_index, 2] = self.stocks[stock_name].daily_precentile_acceleration
@@ -101,7 +103,6 @@ class PortFolio:
             # state[line_index, 18] = self.stocks[stock_name].num_of_stocks_owned
             # state[line_index, 19] = self.stocks[stock_name].price_per_stock
         return state
-
 
     def act(self, stock_predictions):
         """
@@ -136,8 +137,8 @@ class PortFolio:
 
             #
             real_act[index] = num_of_stocks
-            if stock_predictions[stock_name] != num_of_stocks:
-                print("want to do: " + str(stock_predictions[stock_name]) + " but do " + str(
-                    num_of_stocks))
+            # if stock_predictions[stock_name] != num_of_stocks:
+            #     print("want to do: " + str(stock_predictions[stock_name]) + " but do " + str(
+            #         num_of_stocks))
         # return np.array(results)
         return np.array(results), np.array(real_act)
