@@ -33,6 +33,7 @@ class PortFolio:
                                                    self.stocks[stock_name], 10e-1)
                              for stock_name in
                              self.stock_name_list}
+        self.min_stick_len = min(self.stock_market,key=lambda x:self.stock_market[x].row_len)
         # self.next_day()
 
     def update_portfolio(self):
