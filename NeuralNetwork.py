@@ -88,9 +88,7 @@ class NeuralNetwork:
         Train the model on previous experiences
         :param batch_size: the size of the batch to train
         """
-        batch = []
-        for i in range(len(self.memory) - batch_size + 1, len(self.memory)):
-            batch.append(self.memory[i])
+        batch = random.sample(self.memory, batch_size)
         X_train, y_train = [], []
         for state, action, reward, next_state, done in batch:
             if done:

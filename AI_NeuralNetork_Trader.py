@@ -1,5 +1,3 @@
-import math
-import numpy as np
 import tensorflow as tf
 from pandas.tseries.offsets import BDay
 import datetime
@@ -9,7 +7,6 @@ from NeuralNetwork import NeuralNetwork
 from PortFolio import PortFolio
 import keras.backend as K
 from tqdm import tqdm_notebook, tqdm
-from collections import deque
 from pandas.tseries.holiday import USFederalHolidayCalendar
 
 
@@ -107,7 +104,6 @@ def run_trader(neuralNet, porfolio, batch_size, stock_names):
     done = False
     states = porfolio.getState().tolist()
     size_loop = porfolio.stock_market[stock_names[0]].stock_data.shape[0] * len(date_list)
-    neuralNet.memory.clear()
     tmp = porfolio.stock_market[porfolio.stock_name_list[0]]
     data_samples = tmp.row_len - 1 - tmp.time_stamp
     stock_predictions = {}
@@ -131,15 +127,12 @@ def run_trader(neuralNet, porfolio, batch_size, stock_names):
         if t == data_samples - 1:
             done = True
     porfolio.getBalance()
-    # for i in range(-int(neuralNet.action_space / 2), int(neuralNet.action_space / 2) + 1):
-    #     print(str(i) + " call " + "by the net " + str(neru_dic[i]))
-    #     print(str(i) + " use " + str(reall_dic[i]))
 
 
 if __name__ == "__main__":
     # vars for PortFolio
-    stock_names = ["AAPL", "GOOGL"]
-    date_list = make_date_list(4)
+    stock_names = ["AAPL", "GOOGL", "NDAQ", "NVDA"]
+    date_list = make_date_list(5)
     interval = "1m"
     stock_indices = {name: i for name, i in enumerate(stock_names)}
     initial_investment = 10000
@@ -152,11 +145,6 @@ if __name__ == "__main__":
     action_space = 3  # todo: if there is more then one stock this need to cheng ODD
     signal_rate = 1  # todo: what is this parmeter?
 
-    # neru_dic = dict()
-    # reall_dic = dict()
-    # for i in range(-int(action_space / 2), int(action_space / 2) + 1):
-    #     neru_dic[i] = 0
-    #     reall_dic[i] = 0
 
     neuralNet = NeuralNetwork(episodes, signal_rate, stock_names, state_size, action_space, lodModel="ai_trader_5.h5")
 
@@ -165,7 +153,6 @@ if __name__ == "__main__":
     for episode in range(1, episodes + 1):
         shares = 0
         print("Episode: {}/{}".format(episode, episodes))
-        # state = state_creator(data, 0, window_size + 1)
         run_trader(neuralNet, porfolio, batch_size, stock_names)
 
         if episode % 5 == 0:
@@ -173,6 +160,3 @@ if __name__ == "__main__":
         porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices)
 
     print("yes!!!!")
-    porfolio.getBalance()
-
-    a = 7

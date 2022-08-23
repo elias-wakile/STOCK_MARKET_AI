@@ -5,7 +5,7 @@ import numpy as np
 
 
 class PortFolio:
-    def __init__(self, initial_investment, stock_list, interval, date_list, stock_indices):
+    def __init__(self, initial_investment, stock_list, interval, date_list, stock_indices, state_size=7):
         """
         This function is a portfolio constructor
         :param initial_investment: The initial investment in the portfolio
@@ -27,6 +27,7 @@ class PortFolio:
         self.date_list = date_list
         self.stock_indices = stock_indices
         self.features_num = 20  # todo: was 18 but in getState there is 20 features
+        self.state_size = state_size
         self.stock_market = {stock_name: StockData(stock_name, date_list[0],
                                                    self.interval, date_list[-1],
                                                    self.stocks[stock_name], 10e-1)
@@ -34,30 +35,13 @@ class PortFolio:
                              self.stock_name_list}
         # self.next_day()
 
-    def next_day(self):
-        """
-        This function moves our portfolio to the next day
-        Not needed for the Network
-        """
-        if len(self.date_list) >= 2:
-            curr_date = self.date_list[0]
-            next_date = self.date_list[1]
-            self.date_list = self.date_list[1:]
-            self.stock_market = {stock_name: StockData(stock_name, curr_date,
-                                                       self.interval, next_date,
-                                                       self.stocks[stock_name], 10e-1)
-                                 for stock_name in
-                                 self.stock_name_list}
-
     def update_portfolio(self):
         """
         This function updates the portfolio for the current date
         """
         for stock_name in self.stock_name_list:
             if not self.stock_market[stock_name].update_stock():
-                # self.next_day()
                 break
-                # self.stock_market[stock_name].update_stock()
 
     def getBalance(self):
         """
@@ -79,8 +63,7 @@ class PortFolio:
         :return: The state of the Portfolio, each line represents a stock and
         the columns represent the different values of the parameters
         """
-        # state = np.zeros((len(self.stock_name_list), self.features_num))
-        state = np.zeros((len(self.stock_name_list), 7)) # todo: change the 7 to var
+        state = np.zeros((len(self.stock_name_list), self.state_size))
         for line_index in self.stock_indices.keys():
             stock_name = self.stock_indices[line_index]
             get_st = self.stock_market[stock_name].getState()
@@ -119,17 +102,6 @@ class PortFolio:
             # state[line_index, 19] = self.stocks[stock_name].price_per_stock
         return state
 
-    def end_data(self):
-        """
-        This function check if there is more data to check
-        :return: True if we look over all the data else False
-        """
-        if len(self.date_list) == 1:
-            for stock_name in self.stock_name_list:
-                if not self.stock_market[stock_name].is_end_day():
-                    return False
-            return True
-        return False
 
     def act(self, stock_predictions):
         """
@@ -160,7 +132,7 @@ class PortFolio:
                 self.balance += -num_of_stocks * self.stocks[
                     stock_name].last_high_price  # I think this is the sell so
                 # I cheng the num_of_stocks to be -num_of_stocks
-            results[index] = reward  # todo check reward (0 for buy, n for sell)
+            results[index] = reward
 
             #
             real_act[index] = num_of_stocks
