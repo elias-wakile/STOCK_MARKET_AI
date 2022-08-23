@@ -19,8 +19,8 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 
 
 class NeuralNetwork:
-    def __init__(self, episodes, signal_rate, stock_list, state_size, action_space, model_name="AITraderBest",
-                 gamma=0.95, epsilon=1.0, epsilon_final=0.01, epsilon_decay=0.995, lodModel=None):
+    def __init__(self, episodes, signal_rate, state_size, action_space, model_name="AITraderBest",
+                 gamma=0.95, epsilon=1.0, epsilon_final=0.01, epsilon_decay=0.995, load_model=None):
         # Rates definitions
         self.episodes = episodes
         self.gamma = gamma
@@ -37,13 +37,10 @@ class NeuralNetwork:
         self.model_name = model_name
         self.loss = huber_loss
         self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
-        if lodModel is None:
+        if load_model is None:
             self.model = self.model_builder()
         else:
-            self.model = self.load(lodModel)
-
-        # PortFolio
-        # self.PortFolio = PortFolio(10000, ["AAPL"], "1m", [f"2022-01-0{i}" for i in range(1,10)])
+            self.model = self.load(load_model)
 
     def model_builder(self):
         """
@@ -66,13 +63,7 @@ class NeuralNetwork:
         """
         return load_model(model_name, custom_objects=self.custom_objects)
 
-    def reset_episod(self, balance): # todo:
-        self.balance = balance
-        self.num_own_stock = 0
-        self.money_in_stock = 0
-        self.avg_stock_p = 0
-
-    def act(self, state):
+    def action(self, state):
         """
         Take a action from given possible action
         :param state: the state that the model in, and by it need to take the action

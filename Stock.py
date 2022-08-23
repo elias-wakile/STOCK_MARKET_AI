@@ -54,6 +54,8 @@ class Stock:
         self.CCI = float(1)
         self.RSI = float(1)
 
+
+
     def update(self, volume, low_price, high_price, open_price,
                close_price, curr_time, RSI, ADX, CCI, MACD, momentum,
                new_day=False, newday_momentum=1e-3):
@@ -119,6 +121,7 @@ class Stock:
         self.RSI = RSI
 
         self.money_in_stock = self.num_of_stocks_owned * self.daily_highest
+
 
     def buy_stock(self, amount_of_stocks: int):
         """

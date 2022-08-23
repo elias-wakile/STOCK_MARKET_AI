@@ -27,7 +27,6 @@ class PortFolio:
             self.rewards_dict[stock_name] = []
         self.date_list = date_list
         self.stock_indices = stock_indices
-        self.features_num = 20  # todo: was 18 but in getState there is 20 features
         self.state_size = state_size
         self.stock_market = {stock_name: StockData(stock_name, date_list[0],
                                                    self.interval, date_list[-1],
@@ -61,7 +60,7 @@ class PortFolio:
                         f" Total value: {stock_balance + self.balance}.\n")
         return stock_balance + self.balance
 
-    def getState(self):
+    def get_state(self):
         """
         This function gets the current state of the Portfolio
         :return: The state of the Portfolio, each line represents a stock and
@@ -70,7 +69,7 @@ class PortFolio:
         state = np.zeros((len(self.stock_name_list), self.state_size))
         for line_index in self.stock_indices.keys():
             stock_name = self.stock_indices[line_index]
-            get_st = self.stock_market[stock_name].getState()
+            get_st = self.stock_market[stock_name].get_state()
             if len(get_st) != 7:
                 if self.stocks[stock_name].num_of_stocks_owned > 0:
                     get_st = np.append(get_st, [[1]])
@@ -83,6 +82,25 @@ class PortFolio:
             state[line_index, :] = get_st
 
         return state
+
+    def linear_reward(self):
+        for index in self.stock_indices.keys():
+            stock_name = self.stock_indices[index]
+            num_of_stocks = 0
+            if self.stocks[stock_name].last_close_price - self.stocks[stock_name].last_open_price > 0:
+                num_of_stocks = 1
+            elif self.stocks[stock_name].last_close_price - self.stocks[stock_name].last_open_price < 0:
+                num_of_stocks = -1
+
+            if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:  # todo maybe delete, if working with num=1
+                num_of_stocks = -self.stocks[stock_name].num_of_stocks_owned
+            elif num_of_stocks * self.stocks[stock_name].last_low_price >= self.balance:
+                num_of_stocks = int(self.balance / self.stocks[stock_name].last_low_price)
+            self.stocks[stock_name].transaction(num_of_stocks)
+            if num_of_stocks > 0:
+                self.balance -= num_of_stocks * self.stocks[stock_name].last_low_price
+            elif num_of_stocks < 0:
+                self.balance += -num_of_stocks * self.stocks[stock_name].last_high_price
 
     def action(self, stock_predictions):
         """

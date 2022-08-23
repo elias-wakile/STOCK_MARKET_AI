@@ -42,17 +42,19 @@ class StockData:
         self.update_stock()
         self.new_day = False
 
-    def getState(self):
+    def get_state(self):
         if self.time_stamp == 14:
             state = [0.5] * 5
             state.append(1)
             state.append(0)
             return [state]
-        data_c = self.stock_data.iloc[self.time_stamp]
-        data_p = self.stock_data.iloc[self.time_stamp - 1]
-        state = [sigmoid(data_c["Close"] - data_p["Close"]), sigmoid(data_c["MACD"] - data_p["MACD"]),
-                 sigmoid(data_c["RSI"] - data_p["RSI"]), sigmoid(data_c["CCI"] - data_p["CCI"]),
-                 sigmoid(data_c["ADX"] - data_p["ADX"])]
+        data_current = self.stock_data.iloc[self.time_stamp]
+        data_previous = self.stock_data.iloc[self.time_stamp - 1]
+        state = [sigmoid(data_current["Close"] - data_previous["Close"]),
+                 sigmoid(data_current["MACD"] - data_previous["MACD"]),
+                 sigmoid(data_current["RSI"] - data_previous["RSI"]),
+                 sigmoid(data_current["CCI"] - data_previous["CCI"]),
+                 sigmoid(data_current["ADX"] - data_previous["ADX"])]
         return np.array([state])
 
     def update_stock(self):
