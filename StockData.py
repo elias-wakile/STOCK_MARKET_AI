@@ -1,19 +1,14 @@
 import math
 
 import numpy as np
-import pandas_ta
 import pandas
 import pandas_ta as pta
 import yfinance as yf
 
+
 def sigmoid(x):
-    tmp = 0
-    try:
-        tmp = 1 / (1 + math.exp(-x))
-    except:
-        print(x)
-        raise
-    return tmp
+    return 1 / (1 + math.exp(-x))
+
 
 class StockData:
     def __init__(self, name, start_date, interval, end_date, stock, momentum=10e-1):
@@ -94,5 +89,3 @@ class StockData:
         if self.time_stamp >= self.max_time_stamp - 1:
             return True
         return False
-
-

@@ -120,7 +120,7 @@ class Stock:
 
         self.money_in_stock = self.num_of_stocks_owned * self.daily_highest
 
-    def buy(self, amount_of_stocks: int):
+    def buy_stock(self, amount_of_stocks: int):
         """
         This function process a buying of stocks
         :param amount_of_stocks: The amount of stocks to be bought
@@ -134,10 +134,9 @@ class Stock:
               f"{self.last_low_price}$ per stock.")
         self.file.write(f"Bought stock of {self.stock_name}: "
                         f"{self.last_low_price}$ per stock.\n")
-        # return (1 - (self.daily_lowest / self.last_low_price)) * amount_of_stocks * self.last_low_price
         return [self.num_of_stocks_owned, self.last_low_price]
 
-    def sell(self, amount_of_stocks):
+    def sell_stock(self, amount_of_stocks):
         """
         This function process a selling of stocks
         :param amount_of_stocks: The amount of stocks to be sold
@@ -151,30 +150,19 @@ class Stock:
             self.money_in_stock = 0
         print(f"Sold {amount_of_stocks} stock(s) of {self.stock_name}: "
               f"{self.last_high_price}$ per stock.")
-        # return (1 - (self.last_high_price / self.daily_highest)) * amount_of_stocks * self.last_high_price
         self.file.write(f"Sold {amount_of_stocks} stock(s) of {self.stock_name}: "
                         f"{self.last_high_price}$ per stock. \n")
         return [self.num_of_stocks_owned, self.last_high_price]
 
-    def keep(self):
-        """
-        This function computes the potentiality of keeping the stocks
-        :return: The potentiality of this keeping
-        """
-        print("Keep the stock")
-        # rate = 0
-        # if self.RSI >= 70:
-        #     rate = self.price_per_stock / self.daily_lowest
-        # elif self.RSI <= 30:
-        #     rate = self.price_per_stock / self.daily_highest
-        # elif self.price_per_stock != 0:
-        #     rate = self.last_low_price / self.price_per_stock
-        # else:
-        #     return 0
-        # return (1 - rate) * self.num_of_stocks_owned * self.last_low_price
-        return 0
+    # def keep(self):
+    #     """
+    #     This function computes the potentiality of keeping the stocks
+    #     :return: The potentiality of this keeping
+    #     """
+    #     print("Keep the stock")  # TODO delete
+    #     return 0
 
-    def trade(self, prediction):
+    def transaction(self, prediction):
         """
         This function proceeds a trade in the stock market
         based on a prediction of the model
@@ -182,7 +170,8 @@ class Stock:
         :return:
         """
         if prediction < 0:
-            return self.sell(prediction * -1)
+            return self.sell_stock(prediction * -1)
         elif prediction > 0:
-            return self.buy(prediction)
-        return self.keep()
+            return self.buy_stock(prediction)
+        # return self.keep()
+        return 0  # keep is 0

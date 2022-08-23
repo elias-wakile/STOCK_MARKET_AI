@@ -191,7 +191,7 @@ def run_trader(trader, data, batch_size, is_train=True):
     # for t in tqdm(range(data_samples)):
     for t in range(data_samples):
 
-        action = trader.trade(state)
+        action = trader.transaction(state)
         # next_state = get_state(d[0].values, t + 1, trader.state_size + 1)
         next_state = state_creator(data, t + 1, trader)
         reward = 0

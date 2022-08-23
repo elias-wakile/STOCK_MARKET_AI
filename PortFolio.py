@@ -5,7 +5,7 @@ import numpy as np
 
 
 class PortFolio:
-    def __init__(self, initial_investment, stock_list, interval, date_list, stock_indices,file, state_size=7):
+    def __init__(self, initial_investment, stock_list, interval, date_list, stock_indices, file, state_size=7):
         """
         This function is a portfolio constructor
         :param initial_investment: The initial investment in the portfolio
@@ -23,7 +23,7 @@ class PortFolio:
         self.rewards_dict = {}
         self.file = file
         for stock_name in stock_list:
-            self.stocks[stock_name] = Stock(stock_name,self.file)
+            self.stocks[stock_name] = Stock(stock_name, self.file)
             self.rewards_dict[stock_name] = []
         self.date_list = date_list
         self.stock_indices = stock_indices
@@ -57,8 +57,8 @@ class PortFolio:
               f" Stocks' total value: {stock_balance}."
               f" Total value: {stock_balance + self.balance}.")  # todo: there is no update of the stock of total value
         self.file.write(f"Current balance: {self.balance}."
-                   f" Total stock(s) value: {stock_balance}."
-                   f" Total value: {stock_balance + self.balance}.\n")
+                        f" Total stock(s) value: {stock_balance}."
+                        f" Total value: {stock_balance + self.balance}.\n")
         return stock_balance + self.balance
 
     def getState(self):
@@ -82,29 +82,9 @@ class PortFolio:
                     get_st = np.append(get_st, [[1]])
             state[line_index, :] = get_st
 
-            # state[line_index, 0] = self.stocks[stock_name].daily_highest
-            # state[line_index, 1] = self.stocks[stock_name].daily_lowest
-            # state[line_index, 2] = self.stocks[stock_name].daily_precentile_acceleration
-            # state[line_index, 3] = self.stocks[stock_name].market_volume_acceleration
-            # state[line_index, 4] = self.stocks[stock_name].stock_price_acceleration
-            # state[line_index, 5] = self.stocks[stock_name].per_var
-            # state[line_index, 6] = self.stocks[stock_name].volume_var
-            # state[line_index, 7] = self.stocks[stock_name].price_var
-            # state[line_index, 8] = self.stocks[stock_name].current_price_daily_percentile
-            # state[line_index, 9] = self.stocks[stock_name].last_market_volume #todo: problem in big numbers for nurmalized
-            # state[line_index, 10] = self.stocks[stock_name].last_high_price
-            # state[line_index, 11] = self.stocks[stock_name].last_low_price
-            # state[line_index, 12] = self.stocks[stock_name].last_open_price
-            # state[line_index, 13] = self.stocks[stock_name].last_close_price
-            # state[line_index, 14] = self.stocks[stock_name].ADX
-            # state[line_index, 15] = self.stocks[stock_name].MACD
-            # state[line_index, 16] = self.stocks[stock_name].CCI
-            # state[line_index, 17] = self.stocks[stock_name].RSI
-            # state[line_index, 18] = self.stocks[stock_name].num_of_stocks_owned
-            # state[line_index, 19] = self.stocks[stock_name].price_per_stock
         return state
 
-    def act(self, stock_predictions):
+    def action(self, stock_predictions):
         """
         This function executes the predictions of the Model
         :param stock_predictions: the number of shares we wanna buy of each stock
@@ -119,11 +99,11 @@ class PortFolio:
         for index in self.stock_indices.keys():
             stock_name = self.stock_indices[index]
             num_of_stocks = stock_predictions[stock_name]
-            if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:
+            if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:  # todo maybe delete, if working with num=1
                 num_of_stocks = -self.stocks[stock_name].num_of_stocks_owned
             elif num_of_stocks * self.stocks[stock_name].last_low_price >= self.balance:
                 num_of_stocks = int(self.balance / self.stocks[stock_name].last_low_price)
-            trade_result = self.stocks[stock_name].trade(num_of_stocks)
+            trade_result = self.stocks[stock_name].transaction(num_of_stocks)
             if num_of_stocks > 0:
                 reward = 0
                 self.rewards_dict[stock_name].append(trade_result)
@@ -135,10 +115,5 @@ class PortFolio:
                 # I cheng the num_of_stocks to be -num_of_stocks
             results[index] = reward
 
-            #
             real_act[index] = num_of_stocks
-            # if stock_predictions[stock_name] != num_of_stocks:
-            #     print("want to do: " + str(stock_predictions[stock_name]) + " but do " + str(
-            #         num_of_stocks))
-        # return np.array(results)
         return np.array(results), np.array(real_act)
