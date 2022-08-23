@@ -130,8 +130,8 @@ class Stock:
         self.money_in_stock += amount_of_stocks * self.last_low_price # todo: ????
         self.price_per_stock = min(self.daily_lowest,
                                    self.money_in_stock / self.num_of_stocks_owned)
-        print(f"Bought {amount_of_stocks} stocks of {self.stock_name}"
-              f" for a price of {self.last_low_price}$ per stock.")
+        print(f"Bought {amount_of_stocks} stock(s) of {self.stock_name}: "
+              f"{self.last_low_price}$ per stock.")
         self.file.write(f"Bought stock of {self.stock_name}: "
                         f"{self.last_low_price}$ per stock.\n")
         # return (1 - (self.daily_lowest / self.last_low_price)) * amount_of_stocks * self.last_low_price
@@ -149,7 +149,7 @@ class Stock:
         self.money_in_stock -= amount_of_stocks * self.last_high_price
         if self.num_of_stocks_owned == 0:
             self.money_in_stock = 0
-        print(f"Sold {amount_of_stocks} stock(s) of {self.stock_name}:"
+        print(f"Sold {amount_of_stocks} stock(s) of {self.stock_name}: "
               f"{self.last_high_price}$ per stock.")
         # return (1 - (self.last_high_price / self.daily_highest)) * amount_of_stocks * self.last_high_price
         self.file.write(f"Sold {amount_of_stocks} stock(s) of {self.stock_name}: "
