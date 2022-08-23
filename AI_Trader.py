@@ -5,9 +5,9 @@ import pandas_ta as pta
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import pandas_datareader as data_reader
+#import pandas_datareader as data_reader
 # import talib
-from ta.trend import ADXIndicator
+# from ta.trend import ADXIndicator
 from sklearn.model_selection import train_test_split
 from keras.models import load_model, clone_model
 
@@ -188,7 +188,8 @@ def run_trader(trader, data, batch_size, is_train=True):
     act_chose = {0: 0, 1: 0, 2: 0}
     act_do = {0: 0, 1: 0, 2: 0}
 
-    for t in tqdm(range(data_samples)):
+    # for t in tqdm(range(data_samples)):
+    for t in range(data_samples):
 
         action = trader.trade(state)
         # next_state = get_state(d[0].values, t + 1, trader.state_size + 1)

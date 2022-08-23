@@ -1,14 +1,26 @@
 from collections import deque
 import random
 import numpy as np
-from PortFolio import PortFolio
-from Stock import Stock
 import tensorflow as tf
+import keras.backend as K
+from keras.models import load_model
+
+
+def huber_loss(y_true, y_pred, clip_delta=1.0):
+    """Huber loss - Custom Loss Function for Q Learning
+    Links: 	https://en.wikipedia.org/wiki/Huber_loss
+            https://jaromiru.com/2017/05/27/on-using-huber-loss-in-deep-q-learning/
+    """
+    error = y_true - y_pred
+    cond = K.abs(error) <= clip_delta
+    squared_loss = 0.5 * K.square(error)
+    quadratic_loss = 0.5 * K.square(clip_delta) + clip_delta * (K.abs(error) - clip_delta)
+    return K.mean(tf.where(cond, squared_loss, quadratic_loss))
 
 
 class NeuralNetwork:
     def __init__(self, episodes, signal_rate, stock_list, state_size, action_space, model_name="AITraderBest",
-                 gamma=0.95, epsilon=1.0, epsilon_final=0.01, epsilon_decay=0.995):
+                 gamma=0.95, epsilon=1.0, epsilon_final=0.01, epsilon_decay=0.995, lodModel=None):
         # Rates definitions
         self.episodes = episodes
         self.gamma = gamma
@@ -23,13 +35,21 @@ class NeuralNetwork:
         self.memory = deque(maxlen=2000)
         self.inventory = []
         self.model_name = model_name
-        self.first_iter = True
-        self.model = self.model_builder()
+        self.loss = huber_loss
+        self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
+        if lodModel is None:
+            self.model = self.model_builder()
+        else:
+            self.model = self.load(lodModel)
 
         # PortFolio
         # self.PortFolio = PortFolio(10000, ["AAPL"], "1m", [f"2022-01-0{i}" for i in range(1,10)])
 
     def model_builder(self):
+        """
+        creat a new neural network that will be the model
+        :return: tf.keras.models.Sequential() that is the model
+        """
         model = tf.keras.models.Sequential()
         model.add(tf.keras.layers.Dense(units=32, activation='relu', input_dim=self.state_size))
         model.add(tf.keras.layers.Dense(units=64, activation='relu'))
@@ -38,17 +58,36 @@ class NeuralNetwork:
         model.compile(loss="mse", optimizer=tf.keras.optimizers.Adam(learning_rate=0.001))
         return model
 
+    def load(self, model_name):
+        """
+        Load existing model for the object
+        :param model_name: the name of the model that the object use
+        :return: tf.keras.models to use
+        """
+        return load_model(model_name, custom_objects=self.custom_objects)
+
+    def reset_episod(self, balance): # todo:
+        self.balance = balance
+        self.num_own_stock = 0
+        self.money_in_stock = 0
+        self.avg_stock_p = 0
+
     def act(self, state):
+        """
+        Take a action from given possible action
+        :param state: the state that the model in, and by it need to take the action
+        :return: the action that the model predict is the best
+        """
         if random.random() <= self.epsilon:
             return random.randrange(self.action_space)
-        # if self.first_iter:
-        #     self.first_iter = False
-        #     return 1  # for case of trad in one stock and start with buy
         actions = self.model.predict(state)
         return np.argmax(actions)
 
     def batch_train(self, batch_size):
-        #
+        """
+        Train the model on previous experiences
+        :param batch_size: the size of the batch to train
+        """
         batch = []
         for i in range(len(self.memory) - batch_size + 1, len(self.memory)):
             batch.append(self.memory[i])
@@ -60,7 +99,7 @@ class NeuralNetwork:
                 target = reward + self.gamma * np.amax(self.model.predict(next_state))
 
             q_values = self.model.predict(state)
-            action_num = action + int (self.action_space / 2)
+            action_num = action + int(self.action_space / 2)
             q_values[0][action_num] = target
             X_train.append(state[0])
             y_train.append(q_values[0])
