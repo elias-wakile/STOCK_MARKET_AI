@@ -123,6 +123,7 @@ def run_trader(neuralNet, porfolio, batch_size, stock_names, file):
         porfolio.getBalance()
         # if i % 25 == 0:
         print(f'run:{i} from {size_loop}')
+        file.write(f'run:{i} from {size_loop}')
         if t == data_samples - 1:
             done = True
     porfolio.getBalance()
@@ -153,7 +154,9 @@ if __name__ == "__main__":
         for episode in range(1, episodes + 1):
             shares = 0
             print("Episode: {}/{}".format(episode, episodes))
+            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
             f.write("Episode: {}/{}".format(episode, episodes) + '\n')
+            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
             run_trader(neuralNet, porfolio, batch_size, stock_names, f)
 
             if episode % 5 == 0:

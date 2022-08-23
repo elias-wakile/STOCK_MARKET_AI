@@ -6,7 +6,7 @@ class Stock:
     This class represents a stock
     """
 
-    def __init__(self, name,file):
+    def __init__(self, name, file):
         """
         This is a new stock constructor
         :param name: The stock name
@@ -127,7 +127,7 @@ class Stock:
         :return: The potentiality of this buy
         """
         self.num_of_stocks_owned += amount_of_stocks
-        self.money_in_stock += amount_of_stocks * self.last_low_price # todo: ????
+        self.money_in_stock += amount_of_stocks * self.last_low_price  # todo: ????
         self.price_per_stock = min(self.daily_lowest,
                                    self.money_in_stock / self.num_of_stocks_owned)
         print(f"Bought {amount_of_stocks} stock(s) of {self.stock_name}: "
@@ -135,7 +135,7 @@ class Stock:
         self.file.write(f"Bought stock of {self.stock_name}: "
                         f"{self.last_low_price}$ per stock.\n")
         # return (1 - (self.daily_lowest / self.last_low_price)) * amount_of_stocks * self.last_low_price
-        return [self.num_of_stocks_owned,self.last_low_price]
+        return [self.num_of_stocks_owned, self.last_low_price]
 
     def sell(self, amount_of_stocks):
         """
@@ -153,8 +153,8 @@ class Stock:
               f"{self.last_high_price}$ per stock.")
         # return (1 - (self.last_high_price / self.daily_highest)) * amount_of_stocks * self.last_high_price
         self.file.write(f"Sold {amount_of_stocks} stock(s) of {self.stock_name}: "
-              f"{self.last_high_price}$ per stock. \n")
-        return [self.num_of_stocks_owned,self.last_high_price]
+                        f"{self.last_high_price}$ per stock. \n")
+        return [self.num_of_stocks_owned, self.last_high_price]
 
     def keep(self):
         """
@@ -162,17 +162,17 @@ class Stock:
         :return: The potentiality of this keeping
         """
         print("Keep the stock")
-        rate = 0
-        if self.RSI >= 70:
-            rate = self.price_per_stock / self.daily_lowest
-        elif self.RSI <= 30:
-            rate = self.price_per_stock / self.daily_highest
-        elif self.price_per_stock != 0:
-            rate = self.last_low_price / self.price_per_stock
-        else:
-            return 0
+        # rate = 0
+        # if self.RSI >= 70:
+        #     rate = self.price_per_stock / self.daily_lowest
+        # elif self.RSI <= 30:
+        #     rate = self.price_per_stock / self.daily_highest
+        # elif self.price_per_stock != 0:
+        #     rate = self.last_low_price / self.price_per_stock
+        # else:
+        #     return 0
         # return (1 - rate) * self.num_of_stocks_owned * self.last_low_price
-        return  "X"
+        return 0
 
     def trade(self, prediction):
         """
