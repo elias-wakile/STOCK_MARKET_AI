@@ -24,11 +24,11 @@ def make_date_list(delta_days):
     return date_list_f
 
 
-def run_trader(neuralNet, porfolio, batch_size, stock_names, file):
+def run_trader(neuralNet, portfolio_agent, batch_size, stock_names, file):
     i = 0
     done = False
-    states = porfolio.get_state().tolist()
-    tmp = porfolio.stock_market[porfolio.min_stick_len]
+    states = portfolio_agent.get_state().tolist()
+    tmp = portfolio_agent.stock_market[portfolio_agent.min_stick_len]
 
     data_samples = tmp.row_len - 1 - tmp.time_stamp
     stock_predictions = {}
@@ -41,13 +41,13 @@ def run_trader(neuralNet, porfolio, batch_size, stock_names, file):
             action.append(a)
             stock_predictions[name] = action[ind]
             action_dic[a].append(ind)
-        porfolio.update_portfolio()
-        next_states = porfolio.get_state().tolist()
-        results = porfolio.action(action_dic)
+        portfolio_agent.update_portfolio()
+        next_states = portfolio_agent.get_state().tolist()
+        results = portfolio_agent.action(action_dic)
         for ind, name in enumerate(stock_names):
             neuralNet.memory.append(([states[ind]], action[ind], results[ind], [next_states[ind]], done))
         states = next_states
-        porfolio.getBalance()
+        portfolio_agent.getBalance()
         if len(neuralNet.memory) > batch_size:
             neuralNet.batch_train(batch_size)
         i += 1
@@ -55,7 +55,7 @@ def run_trader(neuralNet, porfolio, batch_size, stock_names, file):
         file.write(f'run: {i} from {data_samples}' + '\n')
         if t == data_samples - 1:
             done = True
-    porfolio.getBalance()
+    portfolio_agent.getBalance()
 
 
 def run_trader_linear(porfolio, file):

@@ -132,7 +132,7 @@ class Stock:
               f"{self.last_low_price}$ per stock.")
         self.file.write(f"Bought {amount_of_stocks} stock of {self.stock_name}: "
                         f"{self.last_low_price}$ per stock.\n")
-        return  self.last_low_price
+        return self.last_low_price
 
     def sell_stock(self, amount_of_stocks):
         """
