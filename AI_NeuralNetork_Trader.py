@@ -22,13 +22,6 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
     return K.mean(tf.where(cond, squared_loss, quadratic_loss))
 
 
-def stocks_price_format(n):
-    if n < 0:
-        return "- # {0:2f}".format(abs(n))
-    else:
-        return "$ {0:2f}".format(abs(n))
-
-
 def make_date_list(delta_days):
     start_date = datetime.datetime.now() - datetime.timedelta(delta_days)
     end_date = (datetime.datetime.now() - datetime.timedelta(1))
@@ -64,14 +57,16 @@ def run_trader(neuralNet, porfolio, batch_size, stock_names, file):
     stock_predictions = {}
     for t in tqdm(range(data_samples)):
         action = []
+        action_dic = {-1: [], 0: [], 1: []}
         for ind, name in enumerate(stock_names):
-            action.append(
-                neuralNet.action([states[ind]]) - int(neuralNet.action_space / 2))  # make this to be between -1 to 1
+            a = neuralNet.action([states[ind]]) - int(neuralNet.action_space / 2)
+            action.append(a)  # make this to be between -1 to 1
             stock_predictions[name] = action[ind]
+            action_dic[a].append(ind)
         # add_stock_predictions(neuralNet, action, states, stock_predictions)
         porfolio.update_portfolio()
         next_states = porfolio.get_state().tolist()
-        results, action_new = porfolio.action(stock_predictions)
+        results = porfolio.action(action_dic)
         for ind, name in enumerate(stock_names):
             neuralNet.memory.append(([states[ind]], action[ind], results[ind], [next_states[ind]], done))
         states = next_states
@@ -105,8 +100,8 @@ if __name__ == "__main__":
     # vars for PortFolio
     stock_names = ["AAPL", "GOOGL", "NDAQ", "NVDA"]
     # stock_names = ["AAPL", "GOOGL", "NVDA"]
-    date_list = make_date_list(5)
-    interval = "1m"
+    date_list = make_date_list(500)
+    interval = "1d"
     stock_indices = {name: i for name, i in enumerate(stock_names)}
     initial_investment = 10000
 
@@ -115,13 +110,13 @@ if __name__ == "__main__":
         porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f)
 
         # vars for NeuralNetwork
-        episodes = 3
+        episodes = 10
         state_size = 7  # todo: if there is more then one stock this need to cheng
         action_space = 3  # todo: if there is more then one stock this need to cheng ODD
         signal_rate = 1  # todo: what is this parmeter?
 
         neural_net = NeuralNetwork(episodes=episodes, signal_rate=signal_rate, state_size=state_size,
-                                   action_space=action_space, load_model='ai_trader_5.h5')
+                                   action_space=action_space)#, load_model='ai_trader_5.h5')
 
         batch_size: int = 16
 
@@ -131,10 +126,10 @@ if __name__ == "__main__":
             f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
             f.write("Episode: {}/{}".format(episode, episodes) + '\n')
             f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            # run_trader(neural_net, porfolio, batch_size, stock_names, f)
-            run_trader_linear(porfolio, stock_names, f)
+            run_trader(neural_net, porfolio, batch_size, stock_names, f)
+            # run_trader_linear(porfolio, f)
             if episode % 5 == 0:
-                neural_net.model.save("ai_trader_{}.h5".format(episode))
+                neural_net.model.save("ai_1_trader_{}.h5".format(episode))
             porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f)
 
         print("yes!!!!")
