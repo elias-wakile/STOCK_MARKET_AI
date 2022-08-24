@@ -122,7 +122,6 @@ class Stock:
 
         self.money_in_stock = self.num_of_stocks_owned * self.daily_highest
 
-
     def buy_stock(self, amount_of_stocks: int):
         """
         This function process a buying of stocks
@@ -157,14 +156,6 @@ class Stock:
                         f"{self.last_high_price}$ per stock. \n")
         return [self.num_of_stocks_owned, self.last_high_price]
 
-    # def keep(self):
-    #     """
-    #     This function computes the potentiality of keeping the stocks
-    #     :return: The potentiality of this keeping
-    #     """
-    #     print("Keep the stock")  # TODO delete
-    #     return 0
-
     def transaction(self, prediction):
         """
         This function proceeds a trade in the stock market
@@ -176,5 +167,4 @@ class Stock:
             return self.sell_stock(prediction * -1)
         elif prediction > 0:
             return self.buy_stock(prediction)
-        # return self.keep()
         return 0  # keep is 0

@@ -94,6 +94,12 @@ class PortFolio:
             elif num_of_stocks < 0:
                 self.balance += -num_of_stocks * self.stocks[stock_name].last_high_price
 
+    def sort_buy(self,stock_predictions):
+        but_dic = {}
+        for single_stock in stock_predictions:
+            but_dic[single_stock] = self.stocks[single_stock].last_low_price
+        new_dic = {k: v for k, v in sorted(but_dic.items(), key=lambda item: item[1])}
+        return new_dic.keys()
     def action(self, stock_predictions):
         """
         This function executes the predictions of the Model
@@ -105,6 +111,9 @@ class PortFolio:
         results = [0] * len(self.stock_name_list)
         real_act = [0] * len(self.stock_name_list)
         for i in range(-1, 2):
+            if i == 1:
+                    stock_predictions[i] = self.sort_buy(stock_predictions[i])
+
             for index in stock_predictions[i]:
                 reward = 0
                 stock_name = self.stock_indices[index]
