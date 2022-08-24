@@ -33,7 +33,7 @@ class PortFolio:
                                                    self.stocks[stock_name], 10e-1)
                              for stock_name in
                              self.stock_name_list}
-        self.min_stick_len = min(self.stock_market,key=lambda x:self.stock_market[x].row_len)
+        self.min_stick_len = min(self.stock_market, key=lambda x: self.stock_market[x].row_len)
         # self.next_day()
 
     def update_portfolio(self):
@@ -94,12 +94,14 @@ class PortFolio:
             elif num_of_stocks < 0:
                 self.balance += -num_of_stocks * self.stocks[stock_name].last_high_price
 
-    def sort_buy(self,stock_predictions):
+    def sort_buy(self, stock_predictions):
         but_dic = {}
-        for single_stock in stock_predictions:
-            but_dic[single_stock] = self.stocks[single_stock].last_low_price
-        new_dic = {k: v for k, v in sorted(but_dic.items(), key=lambda item: item[1])}
+        for index in stock_predictions:
+            stock_name = self.stock_indices[index]
+            but_dic[(stock_name,index)] = self.stocks[stock_name].last_low_price
+        new_dic = {k[1]: v for k, v in sorted(but_dic.items(), key=lambda item: item[1])}
         return new_dic.keys()
+
     def action(self, stock_predictions):
         """
         This function executes the predictions of the Model
@@ -111,14 +113,15 @@ class PortFolio:
         results = [0] * len(self.stock_name_list)
         real_act = [0] * len(self.stock_name_list)
         for i in range(-1, 2):
-            if i == 1:
-                    stock_predictions[i] = self.sort_buy(stock_predictions[i])
+            if i == 1 and len(stock_predictions[i])>0:
+                stock_predictions[i] = self.sort_buy(stock_predictions[i])
 
             for index in stock_predictions[i]:
                 reward = 0
                 stock_name = self.stock_indices[index]
                 num_of_stocks = i
-                if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:  # todo maybe delete, if working with num=1
+                if num_of_stocks < -self.stocks[
+                    stock_name].num_of_stocks_owned:  # todo maybe delete, if working with num=1
                     num_of_stocks = -self.stocks[stock_name].num_of_stocks_owned
                 elif num_of_stocks * self.stocks[stock_name].last_low_price >= self.balance:
                     num_of_stocks = int(self.balance / self.stocks[stock_name].last_low_price)
