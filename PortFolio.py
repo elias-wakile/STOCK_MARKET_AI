@@ -98,8 +98,8 @@ class PortFolio:
         but_dic = {}
         for index in stock_predictions:
             stock_name = self.stock_indices[index]
-            but_dic[(stock_name,index)] = self.stocks[stock_name].last_low_price
-        new_dic = {k[1]: v for k, v in sorted(but_dic.items(), key=lambda item: item[1])}
+            but_dic[index] = self.stocks[stock_name].last_low_price
+        new_dic = {k: v for k, v in sorted(but_dic.items(), key=lambda item: item[1])}
         return new_dic.keys()
 
     def action(self, stock_predictions):
@@ -112,10 +112,11 @@ class PortFolio:
         """
         results = [0] * len(self.stock_name_list)
         real_act = [0] * len(self.stock_name_list)
-        for i in range(-1, 2):
-            if i == 1 and len(stock_predictions[i])>0:
-                stock_predictions[i] = self.sort_buy(stock_predictions[i])
 
+        if len(stock_predictions[1])>0:
+            stock_predictions[1] = self.sort_buy(stock_predictions[1])
+
+        for i in range(-1, 2):
             for index in stock_predictions[i]:
                 reward = 0
                 stock_name = self.stock_indices[index]
