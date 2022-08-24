@@ -1,25 +1,9 @@
-import tensorflow as tf
-from pandas.tseries.offsets import BDay
 import datetime
 import pandas as pd
-
 from NeuralNetwork import NeuralNetwork
 from PortFolio import PortFolio
-import keras.backend as K
 from tqdm import tqdm
 from pandas.tseries.holiday import USFederalHolidayCalendar
-
-
-def huber_loss(y_true, y_pred, clip_delta=1.0):
-    """Huber loss - Custom Loss Function for Q Learning
-    Links: 	https://en.wikipedia.org/wiki/Huber_loss
-            https://jaromiru.com/2017/05/27/on-using-huber-loss-in-deep-q-learning/
-    """
-    error = y_true - y_pred
-    cond = K.abs(error) <= clip_delta
-    squared_loss = 0.5 * K.square(error)
-    quadratic_loss = 0.5 * K.square(clip_delta) + clip_delta * (K.abs(error) - clip_delta)
-    return K.mean(tf.where(cond, squared_loss, quadratic_loss))
 
 
 def make_date_list(delta_days):
@@ -51,14 +35,12 @@ def run_trader(neuralNet, porfolio, batch_size, stock_names, file):
     action_limit = int(neuralNet.action_space / 2)
     for t in tqdm(range(data_samples)):
         action = []
-        # action_dic = {-1: [], 0: [], 1: []}
         action_dic = {i: [] for i in range(-action_limit, action_limit + 1)}
         for ind, name in enumerate(stock_names):
-            a = neuralNet.action([states[ind]]) - int(neuralNet.action_space / 2)
-            action.append(a)  # make this to be between -1 to 1
+            a = neuralNet.action([states[ind]]) - int(neuralNet.action_space / 2)  # make this to be between -X to X
+            action.append(a)
             stock_predictions[name] = action[ind]
             action_dic[a].append(ind)
-        # add_stock_predictions(neuralNet, action, states, stock_predictions)
         porfolio.update_portfolio()
         next_states = porfolio.get_state().tolist()
         results = porfolio.action(action_dic)
@@ -93,21 +75,20 @@ def run_trader_linear(porfolio, file):
 
 if __name__ == "__main__":
     # vars for PortFolio
-    # stock_names = ["AAPL", "GOOGL", "NDAQ", "NVDA"]
-    stock_names = ["AAPL"]
-    date_list = make_date_list(380)
-    interval = "1d"
+    stock_names = ["AAPL", "GOOGL", "NDAQ", "NVDA"]
+    date_list = make_date_list(5)
+    interval = "1m"
     stock_indices = {name: i for name, i in enumerate(stock_names)}
     initial_investment = 10000
     # vars for NeuralNetwork
     episodes = 2
     state_size = 7
-    action_space = 7
+    action_space = 3
     with open("result", 'w') as f:
 
         neural_net = NeuralNetwork(episodes=episodes, state_size=state_size,
                                    action_space=action_space)#, model_to_load='ai_trader_5.h5')
-        porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f, action_space)
+        portfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f, action_space)
 
         batch_size: int = 16
 
@@ -117,8 +98,8 @@ if __name__ == "__main__":
             f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
             f.write("Episode: {}/{}".format(episode, episodes) + '\n')
             f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            run_trader(neural_net, porfolio, batch_size, stock_names, f)
-            # run_trader_linear(porfolio, f)
+            run_trader(neural_net, portfolio, batch_size, stock_names, f)
+            # run_trader_linear(portfolio, f)
             if episode % 5 == 0:
                 neural_net.model.save("ai_1_trader_{}.h5".format(episode))
-            porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f, action_space)
+            portfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f, action_space)

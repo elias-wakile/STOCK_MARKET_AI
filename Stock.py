@@ -146,8 +146,6 @@ class Stock:
             amount_of_stocks = self.num_of_stocks_owned
         self.num_of_stocks_owned -= amount_of_stocks
         self.money_in_stock -= amount_of_stocks * self.last_high_price
-        # if self.num_of_stocks_owned == 0:
-        #     self.money_in_stock = 0
         print(f"Sold {amount_of_stocks} stock(s) of {self.stock_name}: "
               f"{self.last_high_price}$ per stock.")
         self.file.write(f"Sold {amount_of_stocks} stock(s) of {self.stock_name}: "

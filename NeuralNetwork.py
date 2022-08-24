@@ -7,9 +7,8 @@ from keras.models import load_model
 
 
 def huber_loss(y_true, y_pred, clip_delta=1.0):
-    """Huber loss - Custom Loss Function for Q Learning
+    """ Huber loss - Custom Loss Function for Q Learning
     Links: 	https://en.wikipedia.org/wiki/Huber_loss
-            https://jaromiru.com/2017/05/27/on-using-huber-loss-in-deep-q-learning/
     """
     error = y_true - y_pred
     cond = K.abs(error) <= clip_delta
