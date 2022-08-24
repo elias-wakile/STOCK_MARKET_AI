@@ -117,24 +117,29 @@ class PortFolio:
             if len(stock_predictions[i]) > 0:
                 stock_predictions[i] = self.sort_buy(stock_predictions[i])
 
-
-
         for num_of_stocks in range(-action_space_limit, action_space_limit+1):
+            if num_of_stocks == 0:
+                continue
             for index in stock_predictions[num_of_stocks]:
                 reward = 0
                 stock_name = self.stock_indices[index]
-                if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:  # todo maybe delete, if working with num=1
+                if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:
                     num_of_stocks = -self.stocks[stock_name].num_of_stocks_owned
-                elif num_of_stocks * self.stocks[stock_name].last_low_price >= self.balance:
+                elif num_of_stocks * self.stocks[stock_name].last_low_price > self.balance:
                     num_of_stocks = int(self.balance / self.stocks[stock_name].last_low_price)
+
                 trade_result = self.stocks[stock_name].transaction(num_of_stocks)
+                if trade_result == 0:
+                    continue
                 if num_of_stocks > 0:
                     reward = 0
-                    self.rewards_dict[stock_name].append(trade_result)
-                    self.balance -= num_of_stocks * self.stocks[stock_name].last_low_price
+                    for j in range(num_of_stocks):
+                        self.rewards_dict[stock_name].append(trade_result)
+                        self.balance -= self.stocks[stock_name].last_low_price
                 elif num_of_stocks < 0:
-                    reward = trade_result[1] - self.rewards_dict[stock_name][0][1]
-                    self.balance += -num_of_stocks * self.stocks[stock_name].last_high_price
+                    for j in range(-1*num_of_stocks):
+                        reward += trade_result - self.rewards_dict[stock_name].pop(0)
+                        self.balance += self.stocks[stock_name].last_high_price
                 results[index] = reward
 
                 real_act[index] = num_of_stocks

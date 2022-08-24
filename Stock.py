@@ -127,14 +127,12 @@ class Stock:
         :return: The potentiality of this buy
         """
         self.num_of_stocks_owned += amount_of_stocks
-        self.money_in_stock += amount_of_stocks * self.last_low_price  # todo: ????
-        self.price_per_stock = min(self.daily_lowest,
-                                   self.money_in_stock / self.num_of_stocks_owned)
+        self.money_in_stock += amount_of_stocks * self.last_low_price
         print(f"Bought {amount_of_stocks} stock(s) of {self.stock_name}: "
               f"{self.last_low_price}$ per stock.")
-        self.file.write(f"Bought stock of {self.stock_name}: "
+        self.file.write(f"Bought {amount_of_stocks} stock of {self.stock_name}: "
                         f"{self.last_low_price}$ per stock.\n")
-        return [self.num_of_stocks_owned, self.last_low_price]
+        return  self.last_low_price
 
     def sell_stock(self, amount_of_stocks):
         """
@@ -142,17 +140,19 @@ class Stock:
         :param amount_of_stocks: The amount of stocks to be sold
         :return: The potentiality of this sale
         """
+        if self.num_of_stocks_owned == 0:
+            return 0
         if amount_of_stocks > self.num_of_stocks_owned:
             amount_of_stocks = self.num_of_stocks_owned
         self.num_of_stocks_owned -= amount_of_stocks
         self.money_in_stock -= amount_of_stocks * self.last_high_price
-        if self.num_of_stocks_owned == 0:
-            self.money_in_stock = 0
+        # if self.num_of_stocks_owned == 0:
+        #     self.money_in_stock = 0
         print(f"Sold {amount_of_stocks} stock(s) of {self.stock_name}: "
               f"{self.last_high_price}$ per stock.")
         self.file.write(f"Sold {amount_of_stocks} stock(s) of {self.stock_name}: "
                         f"{self.last_high_price}$ per stock. \n")
-        return [self.num_of_stocks_owned, self.last_high_price]
+        return self.last_high_price
 
     def transaction(self, prediction):
         """

@@ -65,10 +65,10 @@ def run_trader(neuralNet, porfolio, batch_size, stock_names, file):
         for ind, name in enumerate(stock_names):
             neuralNet.memory.append(([states[ind]], action[ind], results[ind], [next_states[ind]], done))
         states = next_states
+        porfolio.getBalance()
         if len(neuralNet.memory) > batch_size:
             neuralNet.batch_train(batch_size)
         i += 1
-        porfolio.getBalance()
         print(f'run: {i} from {data_samples}')
         file.write(f'run: {i} from {data_samples}' + '\n')
         if t == data_samples - 1:
@@ -93,20 +93,20 @@ def run_trader_linear(porfolio, file):
 
 if __name__ == "__main__":
     # vars for PortFolio
-    stock_names = ["AAPL", "GOOGL", "NDAQ", "NVDA"]
-    # stock_names = ["AAPL", "GOOGL", "NVDA"]
-    date_list = make_date_list(500)
+    # stock_names = ["AAPL", "GOOGL", "NDAQ", "NVDA"]
+    stock_names = ["AAPL"]
+    date_list = make_date_list(380)
     interval = "1d"
     stock_indices = {name: i for name, i in enumerate(stock_names)}
     initial_investment = 10000
     # vars for NeuralNetwork
-    episodes = 10
+    episodes = 2
     state_size = 7
-    action_space = 3
+    action_space = 7
     with open("result", 'w') as f:
 
         neural_net = NeuralNetwork(episodes=episodes, state_size=state_size,
-                                   action_space=action_space, model_to_load='ai_trader_5.h5')
+                                   action_space=action_space)#, model_to_load='ai_trader_5.h5')
         porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f, action_space)
 
         batch_size: int = 16
@@ -122,5 +122,3 @@ if __name__ == "__main__":
             if episode % 5 == 0:
                 neural_net.model.save("ai_1_trader_{}.h5".format(episode))
             porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f, action_space)
-
-        print("yes!!!!")
