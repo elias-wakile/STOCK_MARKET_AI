@@ -55,7 +55,7 @@ class PortFolio:
             stock_balance += self.stocks[stock].money_in_stock
         print(f"Current balance: {self.balance}."
               f" Stocks' total value: {stock_balance}."
-              f" Total value: {stock_balance + self.balance}.")  # todo: there is no update of the stock of total value
+              f" Total value: {stock_balance + self.balance}.")
         self.file.write(f"Current balance: {self.balance}."
                         f" Total stock(s) value: {stock_balance}."
                         f" Total value: {stock_balance + self.balance}.\n")
@@ -84,7 +84,7 @@ class PortFolio:
             elif self.stocks[stock_name].last_close_price - self.stocks[stock_name].last_open_price < 0:
                 num_of_stocks = -1
 
-            if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:  # todo maybe delete, if working with num=1
+            if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:
                 num_of_stocks = -self.stocks[stock_name].num_of_stocks_owned
             elif num_of_stocks * self.stocks[stock_name].last_low_price >= self.balance:
                 num_of_stocks = int(self.balance / self.stocks[stock_name].last_low_price)

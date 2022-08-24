@@ -41,14 +41,14 @@ class Stock:
 
         self.file = file
 
-        # todo: add name to this part
+        # Price range
         self.current_price_daily_percentile = float(1)
         self.last_high_price = float(1)
         self.last_low_price = float(1)
         self.last_open_price = float(1)
         self.last_close_price = float(1)
 
-        # Special formula parameters todo: I add this part
+        # Special formula parameters
         self.ADX = float(1)
         self.MACD = float(1)
         self.CCI = float(1)
