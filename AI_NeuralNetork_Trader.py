@@ -40,13 +40,6 @@ def make_date_list(delta_days):
     return date_list_f
 
 
-def add_stock_predictions(neural_net, action, states, stock_predictions):
-    for ind, name in enumerate(stock_names):
-        action.append(
-            neural_net.action([states[ind]]) - int(neural_net.action_space / 2))  # make this to be between -1 to 1
-        stock_predictions[name] = action[ind]
-
-
 def run_trader(neuralNet, porfolio, batch_size, stock_names, file):
     i = 0
     done = False
@@ -55,9 +48,11 @@ def run_trader(neuralNet, porfolio, batch_size, stock_names, file):
 
     data_samples = tmp.row_len - 1 - tmp.time_stamp
     stock_predictions = {}
+    action_limit = int(neuralNet.action_space / 2)
     for t in tqdm(range(data_samples)):
         action = []
-        action_dic = {-1: [], 0: [], 1: []}
+        # action_dic = {-1: [], 0: [], 1: []}
+        action_dic = {i: [] for i in range(-action_limit, action_limit + 1)}
         for ind, name in enumerate(stock_names):
             a = neuralNet.action([states[ind]]) - int(neuralNet.action_space / 2)
             action.append(a)  # make this to be between -1 to 1
@@ -104,19 +99,15 @@ if __name__ == "__main__":
     interval = "1d"
     stock_indices = {name: i for name, i in enumerate(stock_names)}
     initial_investment = 10000
-
+    # vars for NeuralNetwork
+    episodes = 10
+    state_size = 7
+    action_space = 3
     with open("result", 'w') as f:
 
-        porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f)
-
-        # vars for NeuralNetwork
-        episodes = 10
-        state_size = 7  # todo: if there is more then one stock this need to cheng
-        action_space = 3  # todo: if there is more then one stock this need to cheng ODD
-        signal_rate = 1  # todo: what is this parmeter?
-
-        neural_net = NeuralNetwork(episodes=episodes, signal_rate=signal_rate, state_size=state_size,
-                                   action_space=action_space)#, load_model='ai_trader_5.h5')
+        neural_net = NeuralNetwork(episodes=episodes, state_size=state_size,
+                                   action_space=action_space, model_to_load='ai_trader_5.h5')
+        porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f, action_space)
 
         batch_size: int = 16
 
@@ -130,6 +121,6 @@ if __name__ == "__main__":
             # run_trader_linear(porfolio, f)
             if episode % 5 == 0:
                 neural_net.model.save("ai_1_trader_{}.h5".format(episode))
-            porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f)
+            porfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f, action_space)
 
         print("yes!!!!")

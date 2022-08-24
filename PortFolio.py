@@ -5,7 +5,7 @@ import numpy as np
 
 
 class PortFolio:
-    def __init__(self, initial_investment, stock_list, interval, date_list, stock_indices, file, state_size=7):
+    def __init__(self, initial_investment, stock_list, interval, date_list, stock_indices, file, action_space,state_size=7):
         """
         This function is a portfolio constructor
         :param initial_investment: The initial investment in the portfolio
@@ -34,7 +34,7 @@ class PortFolio:
                              for stock_name in
                              self.stock_name_list}
         self.min_stick_len = min(self.stock_market, key=lambda x: self.stock_market[x].row_len)
-        # self.next_day()
+        self.action_space = action_space
 
     def update_portfolio(self):
         """
@@ -112,15 +112,17 @@ class PortFolio:
         """
         results = [0] * len(self.stock_name_list)
         real_act = [0] * len(self.stock_name_list)
+        action_space_limit = int(self.action_space/2)
+        for i in range(1,action_space_limit+1):
+            if len(stock_predictions[i]) > 0:
+                stock_predictions[i] = self.sort_buy(stock_predictions[i])
 
-        if len(stock_predictions[1]) > 0:
-            stock_predictions[1] = self.sort_buy(stock_predictions[1])
 
-        for i in range(-1, 2):
-            for index in stock_predictions[i]:
+
+        for num_of_stocks in range(-action_space_limit, action_space_limit+1):
+            for index in stock_predictions[num_of_stocks]:
                 reward = 0
                 stock_name = self.stock_indices[index]
-                num_of_stocks = i
                 if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:  # todo maybe delete, if working with num=1
                     num_of_stocks = -self.stocks[stock_name].num_of_stocks_owned
                 elif num_of_stocks * self.stocks[stock_name].last_low_price >= self.balance:
@@ -132,8 +134,7 @@ class PortFolio:
                     self.balance -= num_of_stocks * self.stocks[stock_name].last_low_price
                 elif num_of_stocks < 0:
                     reward = trade_result[1] - self.rewards_dict[stock_name][0][1]
-                    self.balance += -num_of_stocks * self.stocks[stock_name].last_high_price # this is the sell so
-                    # I cheng the num_of_stocks to be -num_of_stocks
+                    self.balance += -num_of_stocks * self.stocks[stock_name].last_high_price
                 results[index] = reward
 
                 real_act[index] = num_of_stocks

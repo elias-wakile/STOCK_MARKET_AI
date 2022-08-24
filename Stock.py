@@ -54,8 +54,6 @@ class Stock:
         self.CCI = float(1)
         self.RSI = float(1)
 
-
-
     def update(self, volume, low_price, high_price, open_price,
                close_price, curr_time, RSI, ADX, CCI, MACD, momentum,
                new_day=False, newday_momentum=1e-3):
