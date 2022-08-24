@@ -70,7 +70,7 @@ def run_trader(neuralNet, porfolio, batch_size, stock_names, file):
         for ind, name in enumerate(stock_names):
             neuralNet.memory.append(([states[ind]], action[ind], results[ind], [next_states[ind]], done))
         states = next_states
-        if len(neuralNet.memory) > batch_size:  # todo: I add and t % (batch_size / 2) == 0  mey mastic
+        if len(neuralNet.memory) > batch_size:
             neuralNet.batch_train(batch_size)
         i += 1
         porfolio.getBalance()

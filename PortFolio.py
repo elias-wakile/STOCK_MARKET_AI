@@ -113,7 +113,7 @@ class PortFolio:
         results = [0] * len(self.stock_name_list)
         real_act = [0] * len(self.stock_name_list)
 
-        if len(stock_predictions[1])>0:
+        if len(stock_predictions[1]) > 0:
             stock_predictions[1] = self.sort_buy(stock_predictions[1])
 
         for i in range(-1, 2):
@@ -121,8 +121,7 @@ class PortFolio:
                 reward = 0
                 stock_name = self.stock_indices[index]
                 num_of_stocks = i
-                if num_of_stocks < -self.stocks[
-                    stock_name].num_of_stocks_owned:  # todo maybe delete, if working with num=1
+                if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:  # todo maybe delete, if working with num=1
                     num_of_stocks = -self.stocks[stock_name].num_of_stocks_owned
                 elif num_of_stocks * self.stocks[stock_name].last_low_price >= self.balance:
                     num_of_stocks = int(self.balance / self.stocks[stock_name].last_low_price)
@@ -133,8 +132,7 @@ class PortFolio:
                     self.balance -= num_of_stocks * self.stocks[stock_name].last_low_price
                 elif num_of_stocks < 0:
                     reward = trade_result[1] - self.rewards_dict[stock_name][0][1]
-                    self.balance += -num_of_stocks * self.stocks[
-                        stock_name].last_high_price  # I think this is the sell so
+                    self.balance += -num_of_stocks * self.stocks[stock_name].last_high_price # this is the sell so
                     # I cheng the num_of_stocks to be -num_of_stocks
                 results[index] = reward
 
