@@ -52,11 +52,11 @@ def add_stock_predictions(neural_network, action, states, stock_predictions):
         stock_predictions[name] = action[ind]
 
 
-def run_trader(natural_network, porfolio_obj, batch_size, stocks_names, file):
+def run_trader(natural_network, portfolio_obj, batch_len, stocks_names, file):
     i = 0
     done = False
-    states = porfolio_obj.get_state().tolist()
-    tmp = porfolio_obj.stock_market[porfolio_obj.min_stick_len]
+    states = portfolio_obj.get_state().tolist()
+    tmp = portfolio_obj.stock_market[portfolio_obj.min_stick_len]
 
     data_samples = tmp.row_len - 1 - tmp.time_stamp
     stock_predictions = {}
@@ -67,21 +67,21 @@ def run_trader(natural_network, porfolio_obj, batch_size, stocks_names, file):
                 natural_network.action([states[ind]]) - int(natural_network.action_space / 2))  # make this to be between -1 to 1
             stock_predictions[name] = action[ind]
         # add_stock_predictions(neuralNet, action, states, stock_predictions)
-        porfolio_obj.update_portfolio()
-        next_states = porfolio_obj.get_state().tolist()
-        results, action_new = porfolio_obj.action(stock_predictions)
+        portfolio_obj.update_portfolio()
+        next_states = portfolio_obj.get_state().tolist()
+        results, action_new = portfolio_obj.action(stock_predictions)
         for ind, name in enumerate(stocks_names):
             natural_network.memory.append(([states[ind]], action[ind], results[ind], [next_states[ind]], done))
         states = next_states
-        if len(natural_network.memory) > batch_size:  # todo: I add and t % (batch_size / 2) == 0  mey mastic
-            natural_network.batch_train(batch_size)
+        if len(natural_network.memory) > batch_len:  # todo: I add and t % (batch_size / 2) == 0  mey mastic
+            natural_network.batch_train(batch_len)
         i += 1
-        porfolio_obj.getBalance()
+        portfolio_obj.getBalance()
         print(f'run: {i} from {data_samples}')
         file.write(f'run: {i} from {data_samples}' + '\n')
         if t == data_samples - 1:
             done = True
-    porfolio_obj.getBalance()
+    portfolio_obj.getBalance()
 
 
 def run_trader_linear(porfolio, file):
@@ -102,7 +102,6 @@ def run_trader_linear(porfolio, file):
 if __name__ == "__main__":
     # vars for PortFolio
     stock_names = ["AAPL", "GOOGL", "NDAQ", "NVDA"]
-    # stock_names = ["AAPL", "GOOGL", "NVDA"]
     date_list = make_date_list(5)
     interval = "1m"
     stock_indices = {name: i for name, i in enumerate(stock_names)}

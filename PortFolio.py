@@ -113,9 +113,8 @@ class PortFolio:
         """
         results = [0] * len(self.stock_name_list)
         real_act = [0] * len(self.stock_name_list)
-        reward = 0
-
         for index in self.stock_indices.keys():
+            reward = 0
             stock_name = self.stock_indices[index]
             num_of_stocks = stock_predictions[stock_name]
             if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:  # todo maybe delete, if working with num=1
