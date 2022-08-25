@@ -7,9 +7,8 @@ from keras.models import load_model
 
 
 def huber_loss(y_true, y_pred, clip_delta=1.0):
-    """Huber loss - Custom Loss Function for Q Learning
+    """ Huber loss - Custom Loss Function for Q Learning
     Links: 	https://en.wikipedia.org/wiki/Huber_loss
-            https://jaromiru.com/2017/05/27/on-using-huber-loss-in-deep-q-learning/
     """
     error = y_true - y_pred
     cond = K.abs(error) <= clip_delta
@@ -19,14 +18,13 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 
 
 class NeuralNetwork:
-    def __init__(self, episodes, signal_rate, state_size, action_space, model_name="AITraderBest",
-                 gamma=0.95, epsilon=1.0, epsilon_final=0.01, epsilon_decay=0.995, load_model=None):
+    def __init__(self, episodes, state_size, action_space, model_name="AITraderBest",
+                 gamma=0.95, epsilon=1.0, epsilon_final=0.01, epsilon_decay=0.995, model_to_load=None):
         # Rates definitions
         self.episodes = episodes
         self.gamma = gamma
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
-        self.signal_rate = signal_rate
         self.epsilon_final = epsilon_final
 
         # Reward preparation
@@ -37,10 +35,10 @@ class NeuralNetwork:
         self.model_name = model_name
         self.loss = huber_loss
         self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
-        if load_model is None:
+        if model_to_load is None:
             self.model = self.model_builder()
         else:
-            self.model = self.load(load_model)
+            self.model = self.load(model_to_load)
 
     def model_builder(self):
         """

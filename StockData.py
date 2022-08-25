@@ -1,5 +1,4 @@
 import math
-
 import numpy as np
 import pandas
 import pandas_ta as pta
@@ -35,7 +34,7 @@ class StockData:
                                          self.stock_data["Close"],
                                          length=14)
         self.momentum = momentum
-        self.time_stamp = 14  # todo: was 0 change to 14 because there is nun in RSI until 14
+        self.time_stamp = 14
         self.stock = stock
         self.max_time_stamp = self.stock_data.shape[0]
         self.new_day = True
@@ -43,11 +42,6 @@ class StockData:
         self.new_day = False
 
     def get_state(self):
-        if self.time_stamp == 14:
-            state = [0.5] * 5
-            state.append(1)
-            state.append(0)
-            return [state]
         data_current = self.stock_data.iloc[self.time_stamp]
         data_previous = self.stock_data.iloc[self.time_stamp - 1]
         state = [sigmoid(data_current["Close"] - data_previous["Close"]),
@@ -55,6 +49,10 @@ class StockData:
                  sigmoid(data_current["RSI"] - data_previous["RSI"]),
                  sigmoid(data_current["CCI"] - data_previous["CCI"]),
                  sigmoid(data_current["ADX"] - data_previous["ADX"])]
+        for i in range(1,3):
+            current = self.stock_data.iloc[self.time_stamp - i]["Close"]
+            previous = self.stock_data.iloc[self.time_stamp - i - 1]["Close"]
+            state.append(sigmoid(current - previous))
         return np.array([state])
 
     def update_stock(self):
