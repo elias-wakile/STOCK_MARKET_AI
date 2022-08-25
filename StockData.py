@@ -40,6 +40,7 @@ class StockData:
         self.new_day = True
         self.update_stock()
         self.new_day = False
+        self.stock_data.to_csv('{}.csv'.format(name))
 
     def get_state(self):
         data_current = self.stock_data.iloc[self.time_stamp]
@@ -49,7 +50,7 @@ class StockData:
                  sigmoid(data_current["RSI"] - data_previous["RSI"]),
                  sigmoid(data_current["CCI"] - data_previous["CCI"]),
                  sigmoid(data_current["ADX"] - data_previous["ADX"])]
-        for i in range(1,3):
+        for i in range(1, 3):
             current = self.stock_data.iloc[self.time_stamp - i]["Close"]
             previous = self.stock_data.iloc[self.time_stamp - i - 1]["Close"]
             state.append(sigmoid(current - previous))
