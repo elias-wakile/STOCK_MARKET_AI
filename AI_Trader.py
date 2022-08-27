@@ -270,8 +270,8 @@ if __name__ == "__main__":
     stock_list = ["NDAQ", "GOOGL", "AAPL", "NVDA", "AXSM"]
     for stock_name in stock_list:
         print(f"#####  start stock {stock_name} #######")
-        data = dataset_loader(stock_name, 4, "1m")
-        name_csv = stock_name + "_oneDay_test.csv"
+        data = dataset_loader(stock_name, 1000, "1d")
+        name_csv = stock_name + "_1000d_test.csv"
         data.to_csv(name_csv)
         state_size = 7  # 4
         episodes = 5
