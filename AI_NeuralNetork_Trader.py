@@ -1,4 +1,6 @@
 import datetime
+
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -9,8 +11,9 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 
 
 def make_date_list(delta_days):
-    start_date = datetime.datetime.now() - datetime.timedelta(delta_days)
-    end_date = (datetime.datetime.now() - datetime.timedelta(1))
+    # we choose the 24th of August 2022 to have uniformed graphs
+    start_date = datetime.date(2022,8,24) - datetime.timedelta(delta_days)
+    end_date = datetime.date(2022,8,24)
     cal = USFederalHolidayCalendar()
     holidays = cal.holidays(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d')).to_pydatetime()
     holidays_f = []
@@ -26,14 +29,17 @@ def make_date_list(delta_days):
     return date_list_f
 
 
-def run_trader(neuralNet, portfolio_agent, batch_size, stock_names, file):
+def run_trader(neuralNet, portfolio_agent, batch_size, stock_names, file,initial_balance,graph_index):
     i = 0
     done = False
     states = portfolio_agent.get_state().tolist()
     tmp = portfolio_agent.stock_market[portfolio_agent.min_stick_len]
-
     data_samples = tmp.row_len - 1 - tmp.time_stamp
     stock_predictions = {}
+    balance_difference_lst = []
+    current_balance = initial_balance
+    balance_difference = initial_balance
+    balance_progress = []
     action_limit = int(neuralNet.action_space / 2)
     for t in tqdm(range(data_samples)):
         print(
@@ -53,7 +59,12 @@ def run_trader(neuralNet, portfolio_agent, batch_size, stock_names, file):
         for ind, name in enumerate(stock_names):
             neuralNet.memory.append(([states[ind]], action[ind], results[ind], [next_states[ind]], done))
         states = next_states
-        portfolio_agent.getBalance()
+        balance_progress.append(current_balance)
+        current_balance = portfolio_agent.getBalance()
+        balance_difference -= current_balance
+        balance_difference_lst.append(balance_difference)
+        balance_difference = current_balance
+
         if len(neuralNet.memory) > batch_size:
             neuralNet.batch_train(batch_size)
         i += 1
@@ -61,13 +72,33 @@ def run_trader(neuralNet, portfolio_agent, batch_size, stock_names, file):
         # file.write(f'run: {i} from {data_samples}' + '\n')
         if t == data_samples - 1:
             done = True
-    portfolio_agent.getBalance()
+    # balance_difference = current_balance
+    # current_balance = portfolio_agent.getBalance()
+    # balance_difference -= current_balance
+    # balance_difference_lst.append(balance_difference)
+    xaxis = np.array([portfolio_agent.date_list[i] for i in range(data_samples)])
+    yaxis = np.array(balance_difference_lst)
+    plt.figure(figsize=(15, 5))
+    plt.plot(xaxis,yaxis)
+    plt.savefig("reward_graph_{}.1.png".format(graph_index))
+    plt.close()
+
+    y1axis = np.array(balance_progress)
+    plt.figure(figsize=(15, 5))
+    plt.plot(xaxis, y1axis)
+    plt.savefig("balance_progress_{}.1.png".format(graph_index))
+    plt.close()
 
 
+def run_trader_linear(porfolio, file,initial_balance):
 def run_trader_linear(porfolio, file, stock_names):
     i = 0
     tmp = porfolio.stock_market[porfolio.min_stick_len]
     data_samples = tmp.row_len - 1 - tmp.time_stamp
+    balance_difference_lst = []
+    current_balance = initial_balance
+    balance_progress = []
+    balance_difference = initial_balance
     states_buy = [[] for i in stock_names]
     states_sell = [[] for i in stock_names]
     for _ in tqdm(range(data_samples)):
@@ -83,6 +114,29 @@ def run_trader_linear(porfolio, file, stock_names):
             elif a < 0:
                 states_sell[ind].append(porfolio.stock_market[name].time_stamp)
         porfolio.update_portfolio()
+        i += 1
+        # porfolio.getBalance()
+        balance_progress.append(current_balance)
+        current_balance = porfolio.getBalance()
+        balance_difference -= current_balance
+        balance_difference_lst.append(balance_difference)
+        balance_difference = current_balance
+
+        print(f'run: {i} from {data_samples}')
+        file.write(f'run: {i} from {data_samples} \n')
+    # porfolio.getBalance()
+    xaxis = np.array([porfolio.date_list[i] for i in range(data_samples)])
+    yaxis = np.array(balance_difference_lst)
+    plt.plot(xaxis, yaxis)
+    plt.xticks(rotation=45)
+    plt.savefig("reward_graph.png")
+    plt.close()
+
+    y1axis = np.array(balance_progress)
+    plt.plot(xaxis, y1axis)
+    plt.xticks(rotation=45)
+    plt.savefig("balance_progress.png")
+    plt.close()
         # i += 1
         porfolio.getBalance()
         # print(f'run: {i} from {data_samples}')
@@ -125,7 +179,7 @@ def main_def(kind_agent, is_new_net):
     episodes = 10
     state_size = 7
     action_space = 3
-    epsilon_final = 0.01
+    graph_index = 1
 
     with open("testing_interface.txt", 'w') as f:
         portfolio = PortFolio(initial_investment, stock_names, interval, date_list[:haf_len_date], stock_indices, f,
