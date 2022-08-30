@@ -76,7 +76,8 @@ class PortFolio:
         return state
 
     def linear_reward(self):
-        results = [0] * len(self.stock_name_list)
+        action = [0] * len(self.stock_name_list)
+        reword = [0] * len(self.stock_name_list)
         for index in self.stock_indices.keys():
             stock_name = self.stock_indices[index]
             num_of_stocks = 0
@@ -93,17 +94,18 @@ class PortFolio:
             if num_of_stocks > 0:
                 self.balance -= num_of_stocks * self.stocks[stock_name].last_low_price
                 self.rewards_dict[stock_name].append(trade_result)
-                results[index] = num_of_stocks
+                action[index] = num_of_stocks
             elif num_of_stocks < 0:
                 profit = trade_result - self.rewards_dict[stock_name].pop(0)
+                reword[index] = profit
                 self.profit += profit
                 self.balance += -num_of_stocks * self.stocks[stock_name].last_high_price
-                results[index] = num_of_stocks
-                print(f"Sold {num_of_stocks} stock(s) of {stock_name}: "
+                action[index] = num_of_stocks
+                print(f"Sold {-num_of_stocks} stock(s) of {stock_name}: "
                       f"{self.stocks[stock_name].last_high_price}$ per stock, and make a profit of {profit}$.")
-                self.file.write(f"Sold {num_of_stocks} stock(s) of {stock_name}: "
+                self.file.write(f"Sold {-num_of_stocks} stock(s) of {stock_name}: "
                                 f"{self.stocks[stock_name].last_high_price}$ per stock., and make a profit of {profit}$. \n")
-        return results
+        return action, reword
 
     def sort_buy(self, stock_predictions):
         but_dic = {}
@@ -148,15 +150,17 @@ class PortFolio:
                         self.rewards_dict[stock_name].append(trade_result)
                         self.balance -= self.stocks[stock_name].last_low_price
                 elif num_of_stocks < 0:
+                    curr_balance = self.balance
                     for j in range(-1*num_of_stocks):
                         profit = trade_result - self.rewards_dict[stock_name].pop(0)
                         reward += profit
                         self.profit += profit
                         self.balance += self.stocks[stock_name].last_high_price
-                        print(f"Sold {num_of_stocks} stock(s) of {stock_name}: "
-                              f"{self.stocks[stock_name].last_high_price}$ per stock, and make a profit of {profit}$.")
-                        self.file.write(f"Sold {num_of_stocks} stock(s) of {stock_name}: "
-                                        f"{self.stocks[stock_name].last_high_price}$ per stock., and make a profit of {profit}$. \n")
+                    print(f'Sold {-num_of_stocks} stock(s) of {stock_name}: {self.stocks[stock_name].last_high_price}$'
+                          f' per stock, and make a profit of {reward}$.')
+                    self.file.write(f"Sold {-num_of_stocks} stock(s) of {stock_name}: "
+                                    f"{self.stocks[stock_name].last_high_price}$ per stock., and make a profit of"
+                                    f" {reward}$. \n")
                 results[index] = reward
 
                 real_act[index] = num_of_stocks

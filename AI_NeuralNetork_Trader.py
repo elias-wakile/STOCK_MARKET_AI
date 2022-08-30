@@ -1,19 +1,21 @@
 import datetime
-
+import sys
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-
 from NeuralNetwork import NeuralNetwork
 from PortFolio import PortFolio
 from tqdm import tqdm
 from pandas.tseries.holiday import USFederalHolidayCalendar
+import plotly.graph_objects as go
+import os
+from plotly.subplots import make_subplots
 
 
 def make_date_list(delta_days):
     # we choose the 24th of August 2022 to have uniformed graphs
-    start_date = datetime.date(2022,8,24) - datetime.timedelta(delta_days)
-    end_date = datetime.date(2022,8,24)
+    start_date = datetime.date(2022, 8, 29) - datetime.timedelta(delta_days)
+    end_date = datetime.date(2022, 8, 24)
     cal = USFederalHolidayCalendar()
     holidays = cal.holidays(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d')).to_pydatetime()
     holidays_f = []
@@ -25,20 +27,96 @@ def make_date_list(delta_days):
         tmp = day_w.strftime('%Y-%m-%d')
         if tmp not in holidays_f:
             date_list_f.append(tmp)
-
     return date_list_f
 
 
-def run_trader(neuralNet, portfolio_agent, batch_size, stock_names, file,initial_balance,graph_index):
+# def buy_sell_graph(porfolio, stock_names, states_buy, states_sell):
+#     balance = porfolio.getBalance()
+#     fig, ax1 = plt.subplots()
+#     ax = [ax1]
+#     for ind, name in enumerate(stock_names):
+#         close = porfolio.stock_market[stock_names[ind]].stock_data["Close"]
+#
+#         ax[-1].plot(close, lw=2.)
+#         ax[-1].plot(close, '^', markersize=10, markevery=states_buy[ind])
+#         ax[-1].plot(close, 'v', markersize=10, markevery=states_sell[ind])
+#         # ax2 = ax[-1].twinx()
+#         # ax.append(ax2)
+#     plt.legend()
+#     invest = ((balance - 10000) / 10000) * 100
+#     plt.title('total gains %f, total investment %f%%' % (balance, invest))
+#     plt.savefig('Q-learning agent' + '.png')
+#     plt.show()
+#     print(porfolio.profit)
+
+
+def reward_graph(model_name, ax, ay, graph_index, interval):
+    plt.plot(ax, ay)
+    if graph_index != -1:
+        plt.title(f'Reward of the model with interval {interval} ' + model_name + f" as depend in time: training number {graph_index}")
+        plt.savefig(model_name + f"_reward_graph_{graph_index}_{interval}.png")
+    else:
+        plt.title(f'Reward of the model with interval {interval} ' + model_name + f" as depend in time: testing")
+        plt.savefig(model_name + f"_reward_graph_test_{interval}.png")
+    plt.show()
+    plt.close()
+
+
+def balance_graph(model_name, ax, ay, graph_index, interval):
+    fig = go.Figure(data=go.Scatter(x=ax,y=ay, mode='lines'))
+    fig.update_yaxes(title_text="Money in dollars ")
+    fig.update_xaxes(title_text="Date")
+    if graph_index != -1:
+        title = f'Balance of the model with interval {interval} ' + model_name +\
+                f" as depend in time: training number {graph_index}"
+        save_name = model_name + f"_balance_progress_{graph_index}_{interval}.png"
+    else:
+        title = f'Balance of the model with interval {interval} ' + model_name + f" as depend in time: testing"
+        save_name = model_name + f"_balance_progress_test_{interval}.png"
+    fig.update_layout(title_text=title, title_x=0.5)
+    fig.write_image(f"images/{save_name}")
+    fig.show()
+
+
+def reward_pre_stock_graph(model_name, xaxis, stock_reward, graph_index, stock_names, interval):
+    if graph_index != -1:
+        title = f'Reward per stock with interval {interval} ' + model_name +\
+                f" as depend in time: training number {graph_index}"
+        save_name = model_name + f"_reward_per_stock_progress_{graph_index}_{interval}.png"
+    else:
+        title = f'Reward per stock with interval {interval} ' + model_name + f" as depend in time: testing"
+        save_name = model_name + f"_reward_per_stock_progress_test_{interval}.png"
+    fig = make_subplots(rows=len(stock_names), shared_xaxes=True, y_title="Money in dollars", x_title="Date")
+    for ind, name in enumerate(stock_names):
+        fig.add_trace(go.Scatter(x=xaxis, y=stock_reward[name],  mode='lines+markers', name=name), row=ind+1, col=1)
+    fig.update_layout(title_text=title, title_x=0.5)
+    fig.write_image(f"images/{save_name}")
+    fig.show()
+    # fig, axs = plt.subplots(len(stock_names), sharex=True)
+    # for ind, name in enumerate(stock_names):
+    #     axs[ind].plot(xaxis, stock_reward[name], label=name)
+    #     axs[ind].legend(loc=0)
+    # if graph_index != -1:
+    #     plt.suptitle(f'Reward per stock with interval {interval} ' + model_name + f" as depend in time: training number {graph_index}")
+    #     plt.savefig(model_name + f"_reward_per_stock_progress_{graph_index}_{interval}.png")
+    # else:
+    #     plt.suptitle(f'Reward per stock with interval {interval} ' + model_name + f" as depend in time: testing")
+    #     plt.savefig(model_name + f"_reward_per_stock_progress_test_{interval}.png")
+    #
+    # plt.show()
+
+
+def run_trader(neuralNet, portfolio_agent, batch_size, stock_names, file, initial_balance, graph_index, interval):
     i = 0
     done = False
     states = portfolio_agent.get_state().tolist()
     tmp = portfolio_agent.stock_market[portfolio_agent.min_stick_len]
+    start_date_ind = tmp.time_stamp
     data_samples = tmp.row_len - 1 - tmp.time_stamp
-    stock_predictions = {}
+    stock_reward = {name: [] for name in stock_names}
     balance_difference_lst = []
     current_balance = initial_balance
-    balance_difference = initial_balance
+    balance_difference = 0
     balance_progress = []
     action_limit = int(neuralNet.action_space / 2)
     for t in tqdm(range(data_samples)):
@@ -51,54 +129,78 @@ def run_trader(neuralNet, portfolio_agent, batch_size, stock_names, file,initial
         for ind, name in enumerate(stock_names):
             a = neuralNet.action([states[ind]]) - int(neuralNet.action_space / 2)  # make this to be between -X to X
             action.append(a)
-            stock_predictions[name] = action[ind]
+            # stock_predictions[name] = action[ind]
             action_dic[a].append(ind)
         portfolio_agent.update_portfolio()
         next_states = portfolio_agent.get_state().tolist()
         results = portfolio_agent.action(action_dic)
         for ind, name in enumerate(stock_names):
             neuralNet.memory.append(([states[ind]], action[ind], results[ind], [next_states[ind]], done))
+            if results[ind] > 0:
+                stock_reward[name].append(results[ind])
+            else:
+                stock_reward[name].append(results[ind])
         states = next_states
         balance_progress.append(current_balance)
         current_balance = portfolio_agent.getBalance()
-        balance_difference -= current_balance
+        balance_difference = portfolio_agent.profit - balance_difference
         balance_difference_lst.append(balance_difference)
-        balance_difference = current_balance
+        balance_difference = portfolio_agent.profit
 
-        if len(neuralNet.memory) > batch_size:
+        if len(neuralNet.memory) > batch_size:  # and t != 0 and t % 4 == 0:
             neuralNet.batch_train(batch_size)
         i += 1
-        # print(f'run: {i} from {data_samples}')
-        # file.write(f'run: {i} from {data_samples}' + '\n')
         if t == data_samples - 1:
             done = True
-    # balance_difference = current_balance
-    # current_balance = portfolio_agent.getBalance()
-    # balance_difference -= current_balance
-    # balance_difference_lst.append(balance_difference)
-    xaxis = np.array([portfolio_agent.date_list[i] for i in range(data_samples)])
-    yaxis = np.array(balance_difference_lst)
-    plt.figure(figsize=(15, 5))
-    plt.plot(xaxis,yaxis)
-    plt.savefig("reward_graph_{}.1.png".format(graph_index))
-    plt.close()
-
+    print(portfolio_agent.profit)
+    xaxis = np.array([i for i in range(data_samples)])
+    # np.array([porfolio.stock_market[stock_names[0]].stock_data.index[i + start_date_ind] for i in range(data_samples)])
+    # xaxis = np.array(xaxis)
     y1axis = np.array(balance_progress)
-    plt.figure(figsize=(15, 5))
-    plt.plot(xaxis, y1axis)
-    plt.savefig("balance_progress_{}.1.png".format(graph_index))
-    plt.close()
+    balance_graph("neuralNet", xaxis, y1axis, graph_index, interval[0])
+    yaxis = np.array(balance_difference_lst)
+    reward_graph("neuralNet", xaxis, yaxis, graph_index, interval[0])
 
 
-def run_trader_linear(porfolio, file,initial_balance):
-def run_trader_linear(porfolio, file, stock_names):
-    i = 0
+    reward_pre_stock_graph("neuralNet", xaxis, stock_reward, graph_index, stock_names, interval[0])
+
+
+def train_net_with_extrapolation(neuralNet, porfolio, batch_size, file, initial_balance, stock_names):
+    done = False
+    states = porfolio.get_state().tolist()
     tmp = porfolio.stock_market[porfolio.min_stick_len]
     data_samples = tmp.row_len - 1 - tmp.time_stamp
+    for _ in tqdm(range(data_samples)):
+        print(
+            f'The date: {porfolio.stock_market[porfolio.stock_name_list[0]].stock_data["DATE"].iloc[_]}')
+        file.write(
+            f'The date: {porfolio.stock_market[porfolio.stock_name_list[0]].stock_data["DATE"].iloc[_]}' + '\n')
+        action = []
+        actions, reward = porfolio.linear_reward()
+        for ind, name in enumerate(stock_names):
+            a = actions[ind]
+            action.append(a)
+        porfolio.update_portfolio()
+        next_states = porfolio.get_state().tolist()
+        for ind, name in enumerate(stock_names):
+            neuralNet.memory.append(([states[ind]], action[ind], reward[ind], [next_states[ind]], done))
+        states = next_states
+        if len(neuralNet.memory) > batch_size:
+            neuralNet.batch_train(batch_size)
+        if _ == data_samples - 1:
+            done = True
+        porfolio.getBalance()
+
+
+def run_trader_linear(porfolio, file, initial_balance, stock_names, interval):
+    tmp = porfolio.stock_market[porfolio.min_stick_len]
+    data_samples = tmp.row_len - 1 - tmp.time_stamp
+    start_date_ind = tmp.time_stamp
     balance_difference_lst = []
     current_balance = initial_balance
+    stock_reward = {name: [] for name in stock_names}
     balance_progress = []
-    balance_difference = initial_balance
+    balance_difference = 0
     states_buy = [[] for i in stock_names]
     states_sell = [[] for i in stock_names]
     for _ in tqdm(range(data_samples)):
@@ -106,122 +208,112 @@ def run_trader_linear(porfolio, file, stock_names):
             f'The date: {porfolio.stock_market[porfolio.stock_name_list[0]].stock_data["DATE"].iloc[_]}')
         file.write(
             f'The date: {porfolio.stock_market[porfolio.stock_name_list[0]].stock_data["DATE"].iloc[_]}' + '\n')
-        actions = porfolio.linear_reward()
+        actions, reward = porfolio.linear_reward()
         for ind, name in enumerate(stock_names):
             a = actions[ind]
             if a > 0:
                 states_buy[ind].append(porfolio.stock_market[name].time_stamp)
             elif a < 0:
                 states_sell[ind].append(porfolio.stock_market[name].time_stamp)
+            stock_reward[name].append(reward[ind])
         porfolio.update_portfolio()
-        i += 1
-        # porfolio.getBalance()
         balance_progress.append(current_balance)
         current_balance = porfolio.getBalance()
-        balance_difference -= current_balance
+        balance_difference = porfolio.profit - balance_difference
         balance_difference_lst.append(balance_difference)
-        balance_difference = current_balance
+        balance_difference = porfolio.profit
 
-        print(f'run: {i} from {data_samples}')
-        file.write(f'run: {i} from {data_samples} \n')
-    # porfolio.getBalance()
-    xaxis = np.array([porfolio.date_list[i] for i in range(data_samples)])
+    # xaxis = np.array([i for i in range(data_samples)])
+    xaxis = np.array([porfolio.stock_market[stock_names[0]].stock_data.index[i + start_date_ind] for i in range(data_samples)])
     yaxis = np.array(balance_difference_lst)
-    plt.plot(xaxis, yaxis)
-    plt.xticks(rotation=45)
-    plt.savefig("reward_graph.png")
-    plt.close()
-
+    # reward_graph("Extrapolation", xaxis, yaxis, -1, interval[0])
     y1axis = np.array(balance_progress)
-    plt.plot(xaxis, y1axis)
-    plt.xticks(rotation=45)
-    plt.savefig("balance_progress.png")
-    plt.close()
-        # i += 1
-        porfolio.getBalance()
-        # print(f'run: {i} from {data_samples}')
-        # file.write(f'run: {i} from {data_samples} \n')
-    balance = porfolio.getBalance()
-    fig, ax1 = plt.subplots()
-    ax = [ax1]
-    for ind, name in enumerate(stock_names):
-        close = porfolio.stock_market[stock_names[ind]].stock_data["Close"]
-
-        ax[-1].plot(close, lw=2.)
-        ax[-1].plot(close, '^', markersize=10,  markevery=states_buy[ind])
-        ax[-1].plot(close, 'v', markersize=10, markevery=states_sell[ind])
-        # ax2 = ax[-1].twinx()
-        # ax.append(ax2)
-    plt.legend()
-    invest = ((balance - 10000) / 10000) * 100
-    plt.title('total gains %f, total investment %f%%' % (balance, invest))
-    plt.savefig('Q-learning agent' + '.png')
-    plt.show()
+    # balance_graph("Extrapolation", xaxis, y1axis, -1, interval[0])
+    porfolio.getBalance()
     print(porfolio.profit)
+    reward_pre_stock_graph("Extrapolation", xaxis, stock_reward, -1, stock_names, interval[0])
 
 
-
-def main_def(kind_agent, is_new_net):
+def main_def(kind_agent, new_net, skip_train):
+    if not os.path.exists("images"):
+        os.mkdir("images")
     # vars for PortFolio
-    # stock_names = ["AAPL", "GOOGL", "NDAQ", "NVDA"]
-    # date_list = make_date_list(5)
-    # interval = "1m"
-    # stock_names = ["AMD", "BABA", "SIGA", "CCI", "KPRX"]
-    # stock_names = ["DELL", "T", "VZ", "IBM", "BABA"]
-    stock_names = ["AAPL", "GOOGL", "MSFT", "META", "AMZN"]
+    stock_names = ["AAPL", "GOOGL", "NDAQ", "NVDA"]
+    # delta_day = 32
 
-    date_list = make_date_list(200)
-    interval = "1d"
-    stock_indices = {name: i for name, i in enumerate(stock_names)}
-    initial_investment = 10000
-    haf_len_date = int(len(date_list) / 2)
-    # vars for NeuralNetwork
-    episodes = 10
-    state_size = 7
-    action_space = 3
-    graph_index = 1
+    # interval = "30m"
+    intervals = [["90m", 35]] #[["5m", 35], ["15m", 35], ["30m", 35], ["60m", 35], ["90m", 35]]
+    for interval in intervals:
+        date_list = make_date_list(interval[1])
+        stock_indices = {name: i for name, i in enumerate(stock_names)}
+        initial_investment = 10000
+        haf_len_date = int(len(date_list[1]) / 2)
+        # vars for NeuralNetwork
+        episodes = 5
 
-    with open("testing_interface.txt", 'w') as f:
-        portfolio = PortFolio(initial_investment, stock_names, interval, date_list[:haf_len_date], stock_indices, f,
-                              action_space)
-        if is_new_net == "1":
-            neural_net = NeuralNetwork(episodes=episodes, state_size=state_size,
-                                       action_space=action_space, model_to_load='5_HI_TECH_trader_100.h5')
-        else:
-            neural_net = NeuralNetwork(episodes=episodes, state_size=state_size, action_space=action_space)
-        batch_size: int = 16
-        if kind_agent == "1" or kind_agent == "3":
+        state_size = 7
+        action_space = 11
+        batch_size: int = 8
 
-            for episode in range(1, episodes + 1):
-                print("Episode: {}/{}".format(episode, episodes))
+        with open("old/testing_interface8.txt", 'w') as f:
+            if kind_agent == "1" or kind_agent == "3":
+
+                if new_net != "1":
+                    neural_net = NeuralNetwork(episodes=episodes, state_size=state_size, action_space=action_space
+                                               , model_to_load="testing_interface5_5.h5")
+                else:
+                    neural_net = NeuralNetwork(episodes=episodes, state_size=state_size, action_space=action_space)
+                if skip_train == "1":
+                    episodes = 0
+                for episode in range(1, episodes + 1):
+                    portfolio = PortFolio(initial_investment, stock_names, interval[0], date_list[:haf_len_date],
+                                          stock_indices, f, action_space)
+                    print("Episode: {}/{}".format(episode, episodes))
+                    f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+                    f.write("Episode: {}/{}".format(episode, episodes) + '\n')
+                    f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+                    # if episode % 5 == 0:
+                    #     train_net_with_extrapolation(neural_net, portfolio, batch_size, f, initial_investment, stock_names)
+                    #     portfolio = PortFolio(initial_investment, stock_names, interval, date_list[:haf_len_date],
+                    #                         stock_indices, f, action_space)
+                    run_trader(neural_net, portfolio, batch_size, stock_names, f, initial_investment, episode, interval)
+                    if episode % 5 == 0:
+                        neural_net.model.save("startToWork{}.h5".format(episode))
+
+
+                print("Test NeuralNetwork")
                 f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-                f.write("Episode: {}/{}".format(episode, episodes) + '\n')
+                f.write("Test NeuralNetwork" + '\n')
                 f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-                run_trader(neural_net, portfolio, batch_size, stock_names, f)
-
-                if episode % 5 == 0:
-                    neural_net.model.save("testing_interface_{}.h5".format(episode))
-                portfolio = PortFolio(initial_investment, stock_names, interval, date_list[:haf_len_date],
-                                      stock_indices, f,
+                portfolio = PortFolio(initial_investment, stock_names, interval[0], date_list, stock_indices,
+                                      f, action_space)
+                run_trader(neural_net, portfolio, batch_size, stock_names, f, initial_investment, -1, interval)
+            if kind_agent == "2" or kind_agent == "3":
+                print("Test Linear")
+                f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+                f.write("Test Linear" + '\n')
+                f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+                portfolio = PortFolio(initial_investment, stock_names, interval[0], date_list, stock_indices, f,
                                       action_space)
-            portfolio = PortFolio(initial_investment, stock_names, interval, date_list[haf_len_date:], stock_indices, f,
-                                  action_space)
-            print("Test")
-            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            f.write("Test" + '\n')
-            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            run_trader(neural_net, portfolio, batch_size, stock_names, f)
-        if kind_agent == "2" or kind_agent == "3":
-            print("Test")
-            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            f.write("Test" + '\n')
-            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            run_trader_linear(portfolio, f, stock_names)
+                run_trader_linear(portfolio, f, initial_investment, stock_names, interval)
 
 
 if __name__ == "__main__":
-    agent_kind = input('Press 1 for run Neural Net agent and 2 for Extrapolation agent or 3 for run both agents\n')
+    if len(sys.argv) < 2 or len(sys.argv) > 4:
+        sys.stderr.write("Need to be 2 to 4 parameters")
+
+    agent_kind = sys.argv[
+        1]  # input('Press 1 for run Neural Net agent and 2 for Extrapolation agent or 3 for run both agents\n')
     new_net = None
+    skip_train = None
+    # todo: add error on agent_kind
     if agent_kind == "1" or agent_kind == "3":
-        new_net = input("Press 1 for lode existing neural net and 2 for run on new one\n")
-    main_def(agent_kind, new_net)
+        if len(sys.argv) >= 3:
+            new_net = sys.argv[2]
+            if len(sys.argv) == 4:
+                skip_train = sys.argv[3]
+
+    # new_net = None
+    # if agent_kind == "1" or agent_kind == "3":
+    #     new_net = input("Press 1 for lode existing neural net and 2 for run on new one\n")
+    main_def(agent_kind, new_net, skip_train)
