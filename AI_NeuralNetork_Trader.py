@@ -181,11 +181,11 @@ def run_trader(neuralNet, portfolio_agent, batch_size, stock_names, file, initia
     #                   for i in range(data_samples)])
     # xaxis = np.array(xaxis)
     y1axis = np.array(balance_progress)
-    balance_graph("neuralNet", xaxis, y1axis, graph_index, interval[0])
+    balance_graph("neuralNet", xaxis, y1axis, graph_index, interval)
     yaxis = np.array(balance_difference_lst)
-    reward_graph("neuralNet", xaxis, yaxis, graph_index, interval[0])
+    reward_graph("neuralNet", xaxis, yaxis, graph_index, interval)
 
-    reward_pre_stock_graph("neuralNet", xaxis, stock_reward, graph_index, stock_names, interval[0])
+    reward_pre_stock_graph("neuralNet", xaxis, stock_reward, graph_index, stock_names, interval)
     return y1axis, xaxis
 
 
@@ -224,12 +224,12 @@ def run_trader_linear(portfolio, file, initial_balance, stock_names, interval):
     # xaxis = np.array(
     #     [portfolio.stock_market[stock_names[0]].stock_data.index[i + start_date_ind] for i in range(data_samples)])
     yaxis = np.array(balance_difference_lst)
-    reward_graph("Extrapolation", xaxis, yaxis, -1, interval[0])
+    reward_graph("Extrapolation", xaxis, yaxis, -1, interval)
     y1axis = np.array(balance_progress)
-    balance_graph("Extrapolation", xaxis, y1axis, -1, interval[0])
+    balance_graph("Extrapolation", xaxis, y1axis, -1, interval)
     portfolio.getBalance()
     print(portfolio.profit)
-    reward_pre_stock_graph("Extrapolation", xaxis, stock_reward, -1, stock_names, interval[0])
+    reward_pre_stock_graph("Extrapolation", xaxis, stock_reward, -1, stock_names, interval)
     # buy_sell_graph("Extrapolation", portfolio, stock_names, states_buy, states_sell, -1, interval[0])
     return y1axis
 
@@ -252,7 +252,7 @@ def main_def(kind_agent, new_net, skip_train):
     action_space = 11
     batch_size: int = 8
 
-    with open("old/testing_interface8.txt", 'w') as f:
+    with open("result.txt", 'w') as f:
         if kind_agent == "1" or kind_agent == "3":
 
             if new_net != "1":
@@ -285,11 +285,11 @@ def main_def(kind_agent, new_net, skip_train):
             f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
             f.write("Test Linear" + '\n')
             f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            portfolio = PortFolio(initial_investment, stock_names, interval[0], date_list, stock_indices, f,
+            portfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f,
                                   action_space)
             ay_extrapol = run_trader_linear(portfolio, f, initial_investment, stock_names, interval)
         if kind_agent == "3":
-            balance_graph_together(ax, ay_net, ay_extrapol, interval[0])
+            balance_graph_together(ax, ay_net, ay_extrapol, interval)
 
 
 
