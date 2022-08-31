@@ -51,26 +51,34 @@ FOLDER = "images"
 
 
 def reward_graph(model_name, ax, ay, graph_index, interval):
-    fig = go.Figure(data=go.Scatter(x=ax, y=ay, mode='lines'))
-    fig.update_yaxes(title_text="Reward in dollars ")
-    fig.update_xaxes(title_text="Iteration")
-    if graph_index != -1:
-        title = f'Reward of the model with interval {interval} ' + model_name + \
-                f" as depend in time: training number {graph_index}"
-        save_name = model_name + f"_reward_graph_{graph_index}_{interval}.png"
-    else:
-        title = f'Reward of the model with interval {interval} ' + model_name + f" as depend in time: testing"
-        save_name = model_name + f"_reward_graph_test_{interval}.png"
-    fig.update_layout(title_text=title, title_x=0.5)
-    fig.write_image(f"{FOLDER}/{save_name}")
-    fig.show()
     plt.plot(ax, ay)
+    if graph_index != -1:
+        plt.title(
+            f'Reward of the model with interval {interval} ' + model_name + f" as depend in time: training number {graph_index}")
+        plt.savefig(model_name + f"_reward_graph_{graph_index}_{interval}.png")
+    else:
+        plt.title(f'Reward of the model with interval {interval} ' + model_name + f" as depend in time: testing")
+        plt.savefig(model_name + f"_reward_graph_test_{interval}.png")
+    plt.show()
+    plt.close()
+    # fig = go.Figure(data=go.Scatter(x=ax, y=ay, mode='lines'))
+    # fig.update_yaxes(title_text="Reward in dollars ")
+    # fig.update_xaxes(title_text="Iteration")
+    # if graph_index != -1:
+    #     title = f'Reward of the model with interval {interval} ' + model_name + \
+    #             f" as depend in time: training number {graph_index}"
+    #     save_name = model_name + f"_reward_graph_{graph_index}_{interval}.png"
+    # else:
+    #     title = f'Reward of the model with interval {interval} ' + model_name + f" as depend in time: testing"
+    #     save_name = model_name + f"_reward_graph_test_{interval}.png"
+    # fig.update_layout(title_text=title, title_x=0.5)
+    # fig.write_image(f"{FOLDER}/{save_name}")
+    # fig.show()
+    # plt.plot(ax, ay)
 
 
 def balance_graph(model_name, ax, ay, graph_index, interval):
-    fig = go.Figure(data=go.Scatter(x=ax, y=ay, mode='lines'))
-    fig.update_yaxes(title_text="Money in dollars ")
-    fig.update_xaxes(title_text="Iteration")
+    plt.plot(ax, ay)
     if graph_index != -1:
         title = f'Balance of the model with interval {interval} ' + model_name + \
                 f" as depend in time: training number {graph_index}"
@@ -78,26 +86,43 @@ def balance_graph(model_name, ax, ay, graph_index, interval):
     else:
         title = f'Balance of the model with interval {interval} ' + model_name + f" as depend in time: testing"
         save_name = model_name + f"_balance_progress_test_{interval}.png"
-    fig.update_layout(title_text=title, title_x=0.5)
-    fig.write_image(f"{FOLDER}/{save_name}")
-    fig.show()
+    plt.title(title)
+    plt.savefig(save_name)
+    plt.show()
+    plt.close()
+    # fig = go.Figure(data=go.Scatter(x=ax, y=ay, mode='lines'))
+    # fig.update_yaxes(title_text="Money in dollars ")
+    # fig.update_xaxes(title_text="Iteration")
+    #
+    # fig.update_layout(title_text=title, title_x=0.5)
+    # fig.write_image(f"{FOLDER}/{save_name}")
+    # fig.show()
 
 
 def balance_graph_together(ax, ay_net,ay_ex, interval):
-    fig = go.Figure()
-    ax = [i for i in range(len(ay_ex))]
-    fig.add_trace(go.Scatter(x=ax, y=ay_net, mode='lines', name="neuralNet"))
-    fig.add_trace(go.Scatter(x=ax, y=ay_ex, mode='lines', name="Extrapolation"))
-    fig.update_yaxes(title_text="Money in dollars ")
-    fig.update_xaxes(title_text="Iteration")
+    plt.plot(ax, ay_net, label="neuralNet")
+    plt.plot(ax, ay_ex, label="Extrapolation")
     title = f'Balance of the models with interval {interval} ' + f" as depend in time"
     save_name = f"balance_progress_two_models_{interval}.png"
-    fig.update_layout(title_text=title, title_x=0.5)
-    fig.write_image(f"{FOLDER}/{save_name}")
-    fig.show()
+    plt.legend(loc=0)
+    plt.title(title)
+    plt.savefig(save_name)
+    plt.show()
+    plt.close()
+    # fig = go.Figure()
+    # ax = [i for i in range(len(ay_ex))]
+    # fig.add_trace(go.Scatter(x=ax, y=ay_net, mode='lines', name="neuralNet"))
+    # fig.add_trace(go.Scatter(x=ax, y=ay_ex, mode='lines', name="Extrapolation"))
+    # fig.update_yaxes(title_text="Money in dollars ")
+    # fig.update_xaxes(title_text="Iteration")
+    #
+    # fig.update_layout(title_text=title, title_x=0.5)
+    # fig.write_image(f"{FOLDER}/{save_name}")
+    # fig.show()
 
 
 def reward_pre_stock_graph(model_name, xaxis, stock_reward, graph_index, stock_names, interval):
+    fig, ax = plt.subplots(len(stock_names), 1,  sharex="col")
     if graph_index != -1:
         title = f'Reward per stock with interval {interval} ' + model_name + \
                 f" as depend in time: training number {graph_index}"
@@ -105,12 +130,30 @@ def reward_pre_stock_graph(model_name, xaxis, stock_reward, graph_index, stock_n
     else:
         title = f'Reward per stock with interval {interval} ' + model_name + f" as depend in time: testing"
         save_name = model_name + f"_reward_per_stock_progress_test_{interval}.png"
-    fig = make_subplots(rows=len(stock_names), shared_xaxes=True, y_title="Money in dollars", x_title="Iteration")
     for ind, name in enumerate(stock_names):
-        fig.add_trace(go.Scatter(x=xaxis, y=stock_reward[name], mode='markers', name=name), row=ind + 1, col=1)
-    fig.update_layout(title_text=title, title_x=0.5)
-    fig.write_image(f"{FOLDER}/{save_name}")
+        ax[ind].plot(xaxis, stock_reward[name], label=name)
+        ax[ind].legend(loc=0)
+    fig.suptitle(title)
+    fig.savefig(save_name)
     fig.show()
+    plt.close()
+    # fig, axs = plt.subplots(len(stock_names), sharex=True)
+    # for ind, name in enumerate(stock_names):
+    #     axs[ind].plot(xaxis, stock_reward[name], label=name)
+    #     axs[ind].legend(loc=0)
+    # if graph_index != -1:
+    #     plt.suptitle(f'Reward per stock with interval {interval} ' + model_name + f" as depend in time: training number {graph_index}")
+    #     plt.savefig(model_name + f"_reward_per_stock_progress_{graph_index}_{interval}.png")
+    # else:
+    #     plt.suptitle(f'Reward per stock with interval {interval} ' + model_name + f" as depend in time: testing")
+    #     plt.savefig(model_name + f"_reward_per_stock_progress_test_{interval}.png")
+    #
+    # fig = make_subplots(rows=len(stock_names), shared_xaxes=True, y_title="Money in dollars", x_title="Iteration")
+    # for ind, name in enumerate(stock_names):
+    #     fig.add_trace(go.Scatter(x=xaxis, y=stock_reward[name], mode='markers', name=name), row=ind + 1, col=1)
+    # fig.update_layout(title_text=title, title_x=0.5)
+    # fig.write_image(f"{FOLDER}/{save_name}")
+    # fig.show()
 
 
 def run_trader(neuralNet, portfolio_agent, batch_size, stock_names, file, initial_balance, graph_index, interval):
@@ -222,12 +265,16 @@ def main_def(start_date, end_date, stock_names, tickers):
     if not os.path.exists(FOLDER):
         os.mkdir(FOLDER)
     # vars for PortFolio
+    if (end_date - start_date).days <= 14:
+        initial_investment = 5000
+    else:
+        initial_investment = 10000
     start_date = start_date.strftime('%Y-%m-%d')
     end_date = end_date.strftime('%Y-%m-%d')
 
     interval = "30m"
     stock_indices = {name: i for name, i in enumerate(stock_names)}
-    initial_investment = 10000
+
 
     episodes = 5
     # vars for NeuralNetwork
@@ -237,17 +284,17 @@ def main_def(start_date, end_date, stock_names, tickers):
 
     with open("result.txt", 'w') as f:
         neural_net = NeuralNetwork(episodes=episodes, state_size=state_size, action_space=action_space,
-                                   model_to_load="startToWork.h5")
+                                   model_to_load="1startToWork.h5")
 
-        for episode in range(1, episodes + 1):
-            portfolio = PortFolio(initial_investment, stock_names, interval, start_date, end_date, stock_indices, f,
-                                  action_space)
-            print("Episode: {}/{}".format(episode, episodes))
-            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            f.write("Episode: {}/{}".format(episode, episodes) + '\n')
-            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            run_trader(neural_net, portfolio, batch_size, stock_names, f, initial_investment, episode, interval)
-            neural_net.model.save("startToWork{}.h5".format(episode))
+        # for episode in range(1, episodes + 1):
+        #     portfolio = PortFolio(initial_investment, stock_names, interval, start_date, end_date, stock_indices, f,
+        #                           action_space)
+        #     print("Episode: {}/{}".format(episode, episodes))
+        #     f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+        #     f.write("Episode: {}/{}".format(episode, episodes) + '\n')
+        #     f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+        #     run_trader(neural_net, portfolio, batch_size, stock_names, f, initial_investment, episode, interval)
+        #     neural_net.model.save("startToWork{}.h5".format(episode))
 
         print("Test NeuralNetwork")
         f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
@@ -256,7 +303,7 @@ def main_def(start_date, end_date, stock_names, tickers):
         portfolio = PortFolio(initial_investment, stock_names, interval, start_date, end_date, stock_indices, f,
                               action_space)
         ay_net, ax = run_trader(neural_net, portfolio, batch_size, stock_names, f, initial_investment, -1, interval)
-        neural_net.model.save("1startToWork.h5")
+        neural_net.model.save("2startToWork.h5")
         print("Test Linear")
         f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
         f.write("Test Linear" + '\n')
@@ -271,5 +318,5 @@ def main_def(start_date, end_date, stock_names, tickers):
 
 if __name__ == "__main__":
    end_d = datetime.datetime.now()
-   start_d = (datetime.datetime.now() - datetime.timedelta(30))
-   main_def(start_d, end_d, ["AAPL","GOOGL"], None)
+   start_d = (datetime.datetime.now() - datetime.timedelta(7))
+   main_def(start_d, end_d, ["MSFT", "IBM", "NVDA", "AAPL", "GOOGL"], None)

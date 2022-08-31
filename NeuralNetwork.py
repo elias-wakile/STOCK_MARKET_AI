@@ -19,7 +19,7 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 
 class NeuralNetwork:
     def __init__(self, episodes, state_size, action_space, model_name="AITraderBest",
-                 gamma=0.95, epsilon=1.0, epsilon_final=0.01, epsilon_decay=0.995, model_to_load=None):
+                 gamma=0.95, epsilon=0.5, epsilon_final=0.01, epsilon_decay=0.995, model_to_load=None):
         # Rates definitions
         self.episodes = episodes
         self.gamma = gamma
