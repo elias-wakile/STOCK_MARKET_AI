@@ -4,7 +4,7 @@ from tkcalendar import Calendar
 from tkinter import ttk, PhotoImage, messagebox
 import datetime
 import yfinance as yf
-import AI_NeuralNetork_Trader
+import AI_NeuralNetwork_Trader
 
 
 
@@ -31,7 +31,7 @@ def create_entry_window():
 
                 return
         window.destroy()
-        AI_NeuralNetork_Trader.main_def(sd, ed, stock_names, tickers)
+        AI_NeuralNetwork_Trader.main_def(sd, ed, stock_names, tickers)
 
     window = tkinter.Tk()
     window.title('The Wall Street Orca')
