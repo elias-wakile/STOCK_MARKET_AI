@@ -4,7 +4,8 @@ import numpy as np
 
 
 class PortFolio:
-    def __init__(self, initial_investment, stock_list, interval, date_list, stock_indices, file, action_space,state_size=7):
+    def __init__(self, initial_investment, stock_list, interval, start_date, end_date, stock_indices, file,
+                 action_space, state_size=7):
         """
         This function is a portfolio constructor
         :param initial_investment: The initial investment in the portfolio
@@ -25,11 +26,10 @@ class PortFolio:
         for stock_name in stock_list:
             self.stocks[stock_name] = Stock(stock_name, self.file)
             self.rewards_dict[stock_name] = []
-        self.date_list = date_list
         self.stock_indices = stock_indices
         self.state_size = state_size
-        self.stock_market = {stock_name: StockData(stock_name, date_list[0],
-                                                   self.interval, date_list[-1],
+        self.stock_market = {stock_name: StockData(stock_name, start_date,
+                                                   self.interval, end_date,
                                                    self.stocks[stock_name], 10e-1)
                              for stock_name in
                              self.stock_name_list}
@@ -135,6 +135,7 @@ class PortFolio:
                 continue
             for index in stock_predictions[num_of_stocks]:
                 reward = 0
+                real_profit = 0
                 stock_name = self.stock_indices[index]
                 if num_of_stocks < -self.stocks[stock_name].num_of_stocks_owned:
                     num_of_stocks = -self.stocks[stock_name].num_of_stocks_owned
@@ -146,6 +147,7 @@ class PortFolio:
                     continue
                 if num_of_stocks > 0:
                     reward = 0
+
                     for j in range(num_of_stocks):
                         self.rewards_dict[stock_name].append(trade_result)
                         self.balance -= self.stocks[stock_name].last_low_price
@@ -153,14 +155,18 @@ class PortFolio:
                     curr_balance = self.balance
                     for j in range(-1*num_of_stocks):
                         profit = trade_result - self.rewards_dict[stock_name].pop(0)
+                        real_profit += profit
+                        # if profit < 0 :
+                        #     reward += profit * 5
+                        # else:
                         reward += profit
                         self.profit += profit
                         self.balance += self.stocks[stock_name].last_high_price
                     print(f'Sold {-num_of_stocks} stock(s) of {stock_name}: {self.stocks[stock_name].last_high_price}$'
-                          f' per stock, and make a profit of {reward}$.')
+                          f' per stock, and make a profit of {real_profit}$.')
                     self.file.write(f"Sold {-num_of_stocks} stock(s) of {stock_name}: "
                                     f"{self.stocks[stock_name].last_high_price}$ per stock., and make a profit of"
-                                    f" {reward}$. \n")
+                                    f" {real_profit}$. \n")
                 results[index] = reward
 
                 real_act[index] = num_of_stocks

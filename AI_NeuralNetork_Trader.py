@@ -11,23 +11,7 @@ import plotly.graph_objects as go
 import os
 from plotly.subplots import make_subplots
 
-
-def make_date_list(delta_days):
-    # we choose the 24th of August 2022 to have uniformed graphs
-    start_date = datetime.date(2022, 8, 24) - datetime.timedelta(delta_days)
-    end_date = datetime.date(2022, 8, 24)
-    cal = USFederalHolidayCalendar()
-    holidays = cal.holidays(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d')).to_pydatetime()
-    holidays_f = []
-    for day in holidays:
-        holidays_f.append(day.strftime('%Y-%m-%d'))
-    date_ls = pd.date_range(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), freq="B")
-    date_list_f = []
-    for day_w in date_ls:
-        tmp = day_w.strftime('%Y-%m-%d')
-        if tmp not in holidays_f:
-            date_list_f.append(tmp)
-    return date_list_f
+FOLDER = "images"
 
 
 # def buy_sell_graph(model_name,porfolio, stock_names, states_buy, states_sell, graph_index, interval):
@@ -69,16 +53,16 @@ def make_date_list(delta_days):
 def reward_graph(model_name, ax, ay, graph_index, interval):
     fig = go.Figure(data=go.Scatter(x=ax, y=ay, mode='lines'))
     fig.update_yaxes(title_text="Reward in dollars ")
-    fig.update_xaxes(title_text="Date")
+    fig.update_xaxes(title_text="Iteration")
     if graph_index != -1:
         title = f'Reward of the model with interval {interval} ' + model_name + \
                 f" as depend in time: training number {graph_index}"
-        save_name = model_name + f"_1reward_graph_{graph_index}_{interval}.png"
+        save_name = model_name + f"_reward_graph_{graph_index}_{interval}.png"
     else:
         title = f'Reward of the model with interval {interval} ' + model_name + f" as depend in time: testing"
         save_name = model_name + f"_reward_graph_test_{interval}.png"
     fig.update_layout(title_text=title, title_x=0.5)
-    fig.write_image(f"images/{save_name}")
+    fig.write_image(f"{FOLDER}/{save_name}")
     fig.show()
     plt.plot(ax, ay)
 
@@ -86,16 +70,16 @@ def reward_graph(model_name, ax, ay, graph_index, interval):
 def balance_graph(model_name, ax, ay, graph_index, interval):
     fig = go.Figure(data=go.Scatter(x=ax, y=ay, mode='lines'))
     fig.update_yaxes(title_text="Money in dollars ")
-    fig.update_xaxes(title_text="Date")
+    fig.update_xaxes(title_text="Iteration")
     if graph_index != -1:
         title = f'Balance of the model with interval {interval} ' + model_name + \
                 f" as depend in time: training number {graph_index}"
         save_name = model_name + f"_balance_progress_{graph_index}_{interval}.png"
     else:
         title = f'Balance of the model with interval {interval} ' + model_name + f" as depend in time: testing"
-        save_name = model_name + f"_1balance_progress_test_{interval}.png"
+        save_name = model_name + f"_balance_progress_test_{interval}.png"
     fig.update_layout(title_text=title, title_x=0.5)
-    fig.write_image(f"images/{save_name}")
+    fig.write_image(f"{FOLDER}/{save_name}")
     fig.show()
 
 
@@ -105,11 +89,11 @@ def balance_graph_together(ax, ay_net,ay_ex, interval):
     fig.add_trace(go.Scatter(x=ax, y=ay_net, mode='lines', name="neuralNet"))
     fig.add_trace(go.Scatter(x=ax, y=ay_ex, mode='lines', name="Extrapolation"))
     fig.update_yaxes(title_text="Money in dollars ")
-    fig.update_xaxes(title_text="Date")
+    fig.update_xaxes(title_text="Iteration")
     title = f'Balance of the models with interval {interval} ' + f" as depend in time"
     save_name = f"balance_progress_two_models_{interval}.png"
     fig.update_layout(title_text=title, title_x=0.5)
-    fig.write_image(f"images/{save_name}")
+    fig.write_image(f"{FOLDER}/{save_name}")
     fig.show()
 
 
@@ -117,15 +101,15 @@ def reward_pre_stock_graph(model_name, xaxis, stock_reward, graph_index, stock_n
     if graph_index != -1:
         title = f'Reward per stock with interval {interval} ' + model_name + \
                 f" as depend in time: training number {graph_index}"
-        save_name = model_name + f"_1reward_per_stock_progress_{graph_index}_{interval}.png"
+        save_name = model_name + f"_reward_per_stock_progress_{graph_index}_{interval}.png"
     else:
         title = f'Reward per stock with interval {interval} ' + model_name + f" as depend in time: testing"
         save_name = model_name + f"_reward_per_stock_progress_test_{interval}.png"
-    fig = make_subplots(rows=len(stock_names), shared_xaxes=True, y_title="Money in dollars", x_title="Date")
+    fig = make_subplots(rows=len(stock_names), shared_xaxes=True, y_title="Money in dollars", x_title="Iteration")
     for ind, name in enumerate(stock_names):
         fig.add_trace(go.Scatter(x=xaxis, y=stock_reward[name], mode='markers', name=name), row=ind + 1, col=1)
     fig.update_layout(title_text=title, title_x=0.5)
-    fig.write_image(f"images/{save_name}")
+    fig.write_image(f"{FOLDER}/{save_name}")
     fig.show()
 
 
@@ -234,15 +218,14 @@ def run_trader_linear(portfolio, file, initial_balance, stock_names, interval):
     return y1axis
 
 
-def main_def(kind_agent, new_net, skip_train):
-    if not os.path.exists("images"):
-        os.mkdir("images")
+def main_def(start_date, end_date, stock_names, tickers):
+    if not os.path.exists(FOLDER):
+        os.mkdir(FOLDER)
     # vars for PortFolio
-    stock_names = ["AAPL", "GOOGL", "NDAQ", "NVDA"]
-    delta_day = 32
+    start_date = start_date.strftime('%Y-%m-%d')
+    end_date = end_date.strftime('%Y-%m-%d')
 
     interval = "30m"
-    date_list = make_date_list(delta_day)
     stock_indices = {name: i for name, i in enumerate(stock_names)}
     initial_investment = 10000
 
@@ -253,58 +236,40 @@ def main_def(kind_agent, new_net, skip_train):
     batch_size: int = 8
 
     with open("result.txt", 'w') as f:
-        if kind_agent == "1" or kind_agent == "3":
+        neural_net = NeuralNetwork(episodes=episodes, state_size=state_size, action_space=action_space,
+                                   model_to_load="startToWork.h5")
 
-            if new_net != "1":
-                neural_net = NeuralNetwork(episodes=episodes, state_size=state_size, action_space=action_space, model_to_load="startToWork.h5")
-            else:
-                neural_net = NeuralNetwork(episodes=episodes, state_size=state_size, action_space=action_space)
-            # if skip_train == "1":
-            #     episodes = 0
-            # for episode in range(1, episodes + 1):
-            #     portfolio = PortFolio(initial_investment, stock_names, interval[0], date_list[:haf_len_date],
-            #                           stock_indices, f, action_space)
-            #     print("Episode: {}/{}".format(episode, episodes))
-            #     f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            #     f.write("Episode: {}/{}".format(episode, episodes) + '\n')
-            #     f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            #     run_trader(neural_net, portfolio, batch_size, stock_names, f, initial_investment, episode, interval)
-            #     if episode % 5 == 0:
-            #         neural_net.model.save("startToWork{}.h5".format(episode))
-
-            print("Test NeuralNetwork")
-            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            f.write("Test NeuralNetwork" + '\n')
-            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            portfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices,
-                                  f, action_space)
-            ay_net, ax = run_trader(neural_net, portfolio, batch_size, stock_names, f, initial_investment, -1, interval)
-            neural_net.model.save("startToWork.h5")
-        if kind_agent == "2" or kind_agent == "3":
-            print("Test Linear")
-            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            f.write("Test Linear" + '\n')
-            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
-            portfolio = PortFolio(initial_investment, stock_names, interval, date_list, stock_indices, f,
+        for episode in range(1, episodes + 1):
+            portfolio = PortFolio(initial_investment, stock_names, interval, start_date, end_date, stock_indices, f,
                                   action_space)
-            ay_extrapol = run_trader_linear(portfolio, f, initial_investment, stock_names, interval)
-        if kind_agent == "3":
-            balance_graph_together(ax, ay_net, ay_extrapol, interval)
+            print("Episode: {}/{}".format(episode, episodes))
+            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+            f.write("Episode: {}/{}".format(episode, episodes) + '\n')
+            f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+            run_trader(neural_net, portfolio, batch_size, stock_names, f, initial_investment, episode, interval)
+            neural_net.model.save("startToWork{}.h5".format(episode))
+
+        print("Test NeuralNetwork")
+        f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+        f.write("Test NeuralNetwork" + '\n')
+        f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+        portfolio = PortFolio(initial_investment, stock_names, interval, start_date, end_date, stock_indices, f,
+                              action_space)
+        ay_net, ax = run_trader(neural_net, portfolio, batch_size, stock_names, f, initial_investment, -1, interval)
+        neural_net.model.save("1startToWork.h5")
+        print("Test Linear")
+        f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+        f.write("Test Linear" + '\n')
+        f.write("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+        portfolio = PortFolio(initial_investment, stock_names, interval, start_date, end_date, stock_indices, f,
+                              action_space)
+        ay_extrapol = run_trader_linear(portfolio, f, initial_investment, stock_names, interval)
+        balance_graph_together(ax, ay_net, ay_extrapol, interval)
 
 
 
 
 if __name__ == "__main__":
-    # agent_kind = sys.argv[1]
-    agent_kind = input('Press 1 for run Neural Net agent and 2 for Extrapolation agent or 3 for run both agents\n')
-    while agent_kind != "1" and agent_kind != "2" and agent_kind != "3":
-        agent_kind = input(
-            'Please press 1 for run Neural Net agent and 2 for Extrapolation agent or 3 for run both agents\n')
-
-    new_net = None
-    skip_train = None
-    if agent_kind == "1" or agent_kind == "3":
-        new_net = input("Press 1 for run on new neural net O.W press enter\n")
-        if new_net != "1":
-            skip_train = input("Press 1 for skip the training phase O.W press enter\n")
-    main_def(agent_kind, new_net, skip_train)
+   end_d = datetime.datetime.now()
+   start_d = (datetime.datetime.now() - datetime.timedelta(30))
+   main_def(start_d, end_d, ["AAPL","GOOGL"], None)

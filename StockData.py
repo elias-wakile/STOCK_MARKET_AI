@@ -40,7 +40,6 @@ class StockData:
         self.new_day = True
         self.update_stock()
         self.new_day = False
-        self.stock_data.to_csv('{}.csv'.format(name))
 
     def get_state(self):
         data_current = self.stock_data.iloc[self.time_stamp]
