@@ -1,0 +1,4 @@
+To run the code:
+cd STOCK_MARKET_AI
+pip install -r requirements.txt
+python AI_NeturalNetwork_Trader.py
